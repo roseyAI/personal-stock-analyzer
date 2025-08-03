@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Stock Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .preferences-panel, .analysis-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .preferences-panel h2, .analysis-panel h2 {
+            margin-bottom: 20px;
+            color: #4a5568;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .preference-group {
+            margin-bottom: 20px;
+        }
+
+        .preference-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .preference-group input, .preference-group select, .preference-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .preference-group input:focus, .preference-group select:focus, .preference-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .stock-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stock-symbol {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .score {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .score.high { background: #48bb78; color: white; }
+        .score.medium { background: #ed8936; color: white; }
+        .score.low { background: #f56565; color: white; }
+
+        .stock-info {
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .analysis-text {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Personal Stock Analysis Dashboard</h1>
+            <p>Make informed investment decisions based on your preferences</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="preferences-panel">
+                <h2>Your Investment Preferences</h2>
+                
+                <div class="preference-group">
+                    <label>Investment Budget (₱)</label>
+                    <input type="number" id="budget" placeholder="e.g., 500000" value="500000">
+                </div>
+
+                <div class="preference-group">
+                    <label>Risk Tolerance</label>
+                    <select id="riskTolerance">
+                        <option value="conservative">Conservative (Low Risk)</option>
+                        <option value="moderate" selected>Moderate (Medium Risk)</option>
+                        <option value="aggressive">Aggressive (High Risk)</option>
+                    </select>
+                </div>
+
+                <div class="preference-group">
+                    <label>Investment Timeframe</label>
+                    <select id="timeframe">
+                        <option value="short">Short-term (< 1 year)</option>
+                        <option value="medium" selected>Medium-term (1-5 years)</option>
+                        <option value="long">Long-term (5+ years)</option>
+                    </select>
+                </div>
+
+                <div class="preference-group">
+                    <label>Preferred Sectors</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="tech" checked>
+                            <label for="tech">Technology</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="healthcare">
+                            <label for="healthcare">Healthcare</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="finance">
+                            <label for="finance">Finance</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="consumer">
+                            <label for="consumer">Consumer Goods</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="energy">
+                            <label for="energy">Energy</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="telecommunications">
+                            <label for="telecommunications">Telecommunications</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="preference-group">
+                    <label>Companies to Avoid</label>
+                    <textarea id="avoidList" placeholder="e.g., Tesla, Meta (one per line)" rows="3">Tesla</textarea>
+                </div>
+
+                <div class="preference-group">
+                    <label>ESG Importance</label>
+                    <select id="esgImportance">
+                        <option value="low">Not Important</option>
+                        <option value="medium" selected>Somewhat Important</option>
+                        <option value="high">Very Important</option>
+                    </select>
+                </div>
+
+                <button class="analyze-btn" onclick="analyzeStocks()">🔍 Analyze Stocks</button>
+            </div>
+
+            <div class="analysis-panel">
+                <h2>Stock Analysis Results</h2>
+                <div id="analysisResults">
+                    <div style="text-align: center; padding: 40px; color: #a0aec0;">
+                        Click "Analyze Stocks" to see personalized recommendations
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample stock data - in a real app, this would come from APIs
+        const stockDatabase = {
+            'AAPL': {
+                name: 'Apple Inc.',
+                sector: 'Technology',
+                price: 10494.25, // ₱185.25 * 56.65 USD to PHP
+                pe_ratio: 28.5,
+                dividend_yield: 0.5,
+                market_cap: '161.5T',
+                revenue_growth: 0.08,
+                debt_ratio: 0.35,
+                esg_score: 82,
+                volatility: 0.25,
+                description: 'Leading technology company with strong ecosystem and brand loyalty.'
+            },
+            'GOOGL': {
+                name: 'Alphabet Inc.',
+                sector: 'Technology',
+                price: 8077.63, // ₱142.50 * 56.65
+                pe_ratio: 24.8,
+                dividend_yield: 0.0,
+                market_cap: '99.1T',
+                revenue_growth: 0.12,
+                debt_ratio: 0.15,
+                esg_score: 78,
+                volatility: 0.30,
+                description: 'Dominant search engine with strong AI capabilities and cloud growth.'
+            },
+            'MSFT': {
+                name: 'Microsoft Corporation',
+                sector: 'Technology',
+                price: 23842.15, // ₱420.85 * 56.65
+                pe_ratio: 32.1,
+                dividend_yield: 0.7,
+                market_cap: '176.8T',
+                revenue_growth: 0.15,
+                debt_ratio: 0.20,
+                esg_score: 85,
+                volatility: 0.22,
+                description: 'Cloud computing leader with strong enterprise software presence.'
+            },
+            'NVDA': {
+                name: 'NVIDIA Corporation',
+                sector: 'Technology',
+                price: 49596.23, // ₱875.30 * 56.65
+                pe_ratio: 65.2,
+                dividend_yield: 0.03,
+                market_cap: '121.8T',
+                revenue_growth: 0.58,
+                debt_ratio: 0.25,
+                esg_score: 75,
+                volatility: 0.45,
+                description: 'AI chip leader with strong growth in data center and gaming markets.'
+            },
+            'JNJ': {
+                name: 'Johnson & Johnson',
+                sector: 'Healthcare',
+                price: 8993.94, // ₱158.75 * 56.65
+                pe_ratio: 18.5,
+                dividend_yield: 3.1,
+                market_cap: '24.1T',
+                revenue_growth: 0.05,
+                debt_ratio: 0.45,
+                esg_score: 88,
+                volatility: 0.18,
+                description: 'Diversified healthcare company with strong pharmaceutical pipeline.'
+            },
+            'JPM': {
+                name: 'JPMorgan Chase & Co.',
+                sector: 'Finance',
+                price: 11248.01, // ₱198.45 * 56.65
+                pe_ratio: 12.8,
+                dividend_yield: 2.4,
+                market_cap: '33.0T',
+                revenue_growth: 0.07,
+                debt_ratio: 0.15,
+                esg_score: 72,
+                volatility: 0.28,
+                description: 'Largest US bank with strong investment banking and consumer services.'
+            },
+            'KO': {
+                name: 'The Coca-Cola Company',
+                sector: 'Consumer Goods',
+                price: 3522.50, // ₱62.18 * 56.65
+                pe_ratio: 25.4,
+                dividend_yield: 3.0,
+                market_cap: '15.2T',
+                revenue_growth: 0.04,
+                debt_ratio: 0.55,
+                esg_score: 76,
+                volatility: 0.16,
+                description: 'Global beverage leader with strong brand portfolio and dividend history.'
+            },
+            'XOM': {
+                name: 'Exxon Mobil Corporation',
+                sector: 'Energy',
+                price: 6332.85, // ₱111.80 * 56.65
+                pe_ratio: 13.2,
+                dividend_yield: 5.8,
+                market_cap: '26.8T',
+                revenue_growth: 0.18,
+                debt_ratio: 0.28,
+                esg_score: 65,
+                volatility: 0.35,
+                description: 'Leading integrated oil and gas company with strong dividend yield.'
+            },
+            'CVX': {
+                name: 'Chevron Corporation',
+                sector: 'Energy',
+                price: 8530.95, // ₱150.55 * 56.65
+                pe_ratio: 14.8,
+                dividend_yield: 3.2,
+                market_cap: '31.2T',
+                revenue_growth: 0.15,
+                debt_ratio: 0.22,
+                esg_score: 68,
+                volatility: 0.32,
+                description: 'Integrated energy company with strong cash flow and shareholder returns.'
+            },
+            'VZ': {
+                name: 'Verizon Communications Inc.',
+                sector: 'Telecommunications',
+                price: 2277.85, // ₱40.20 * 56.65
+                pe_ratio: 8.9,
+                dividend_yield: 6.8,
+                market_cap: '9.6T',
+                revenue_growth: 0.02,
+                debt_ratio: 0.58,
+                esg_score: 74,
+                volatility: 0.20,
+                description: 'Leading telecom provider with strong dividend and 5G infrastructure.'
+            },
+            'T': {
+                name: 'AT&T Inc.',
+                sector: 'Telecommunications',
+                price: 996.33, // ₱17.58 * 56.65
+                pe_ratio: 7.2,
+                dividend_yield: 7.1,
+                market_cap: '7.1T',
+                revenue_growth: -0.01,
+                debt_ratio: 0.65,
+                esg_score: 71,
+                volatility: 0.25,
+                description: 'Major telecommunications company with high dividend yield and wireless focus.'
+            }
+        };
+
+        function calculateScore(stock, preferences) {
+            let score = 0;
+            let maxScore = 0;
+
+            // Risk tolerance scoring
+            maxScore += 25;
+            if (preferences.riskTolerance === 'conservative' && stock.volatility < 0.25) score += 25;
+            else if (preferences.riskTolerance === 'moderate' && stock.volatility >= 0.25 && stock.volatility < 0.35) score += 25;
+            else if (preferences.riskTolerance === 'aggressive' && stock.volatility >= 0.35) score += 25;
+            else if (preferences.riskTolerance === 'moderate' && stock.volatility < 0.25) score += 20;
+
+            // Sector preference
+            maxScore += 20;
+            if (preferences.sectors.includes(stock.sector.toLowerCase())) score += 20;
+
+            // ESG scoring
+            maxScore += 15;
+            if (preferences.esgImportance === 'high' && stock.esg_score >= 80) score += 15;
+            else if (preferences.esgImportance === 'medium' && stock.esg_score >= 70) score += 15;
+            else if (preferences.esgImportance === 'low') score += 15;
+            else if (stock.esg_score >= 75) score += 10;
+
+            // Growth potential
+            maxScore += 20;
+            if (stock.revenue_growth >= 0.15) score += 20;
+            else if (stock.revenue_growth >= 0.08) score += 15;
+            else if (stock.revenue_growth >= 0.05) score += 10;
+
+            // Financial health
+            maxScore += 20;
+            if (stock.debt_ratio < 0.3) score += 20;
+            else if (stock.debt_ratio < 0.5) score += 15;
+            else score += 5;
+
+            return Math.round((score / maxScore) * 100);
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return 'high';
+            if (score >= 60) return 'medium';
+            return 'low';
+        }
+
+        function generateRecommendation(stock, preferences) {
+            let reasons = [];
+            
+            // Risk match analysis
+            const riskMatch = (preferences.riskTolerance === 'conservative' && stock.volatility < 0.25) ||
+                            (preferences.riskTolerance === 'moderate' && stock.volatility >= 0.25 && stock.volatility < 0.35) ||
+                            (preferences.riskTolerance === 'aggressive' && stock.volatility >= 0.35);
+            
+            if (riskMatch) {
+                reasons.push(`✅ Perfect risk match for ${preferences.riskTolerance} investors (${(stock.volatility * 100).toFixed(0)}% volatility)`);
+            } else {
+                reasons.push(`⚠️ Risk mismatch: ${stock.volatility < 0.25 ? 'Lower' : 'Higher'} risk than your ${preferences.riskTolerance} preference`);
+            }
+
+            // Sector preference
+            if (preferences.sectors.includes(stock.sector.toLowerCase())) {
+                reasons.push(`✅ Matches your preferred ${stock.sector} sector`);
+            } else {
+                reasons.push(`ℹ️ Outside preferred sectors, but could provide diversification`);
+            }
+
+            // Growth analysis
+            if (stock.revenue_growth >= 0.15) {
+                reasons.push(`🚀 Strong growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
+            } else if (stock.revenue_growth >= 0.08) {
+                reasons.push(`📈 Solid growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
+            } else if (stock.revenue_growth >= 0.05) {
+                reasons.push(`📊 Steady growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
+            } else {
+                reasons.push(`⚠️ Slow growth: Only ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
+            }
+
+            // Financial health
+            if (stock.debt_ratio < 0.3) {
+                reasons.push(`💪 Strong balance sheet: Low debt ratio (${(stock.debt_ratio * 100).toFixed(0)}%)`);
+            } else if (stock.debt_ratio < 0.5) {
+                reasons.push(`📊 Moderate debt levels: ${(stock.debt_ratio * 100).toFixed(0)}% debt ratio`);
+            } else {
+                reasons.push(`⚠️ High debt burden: ${(stock.debt_ratio * 100).toFixed(0)}% debt ratio`);
+            }
+
+            // Dividend analysis
+            if (stock.dividend_yield >= 0.03) {
+                reasons.push(`💰 Good income: ${(stock.dividend_yield * 100).toFixed(1)}% dividend yield`);
+            } else if (stock.dividend_yield > 0) {
+                reasons.push(`💸 Small dividend: ${(stock.dividend_yield * 100).toFixed(1)}% yield`);
+            } else {
+                reasons.push(`📊 No dividend - focused on growth instead`);
+            }
+
+            // ESG scoring
+            if (preferences.esgImportance === 'high' && stock.esg_score >= 80) {
+                reasons.push(`🌱 Excellent ESG score: ${stock.esg_score}/100 (matches your high ESG preference)`);
+            } else if (preferences.esgImportance === 'medium' && stock.esg_score >= 70) {
+                reasons.push(`🌱 Good ESG score: ${stock.esg_score}/100`);
+            } else if (stock.esg_score < 70 && preferences.esgImportance === 'high') {
+                reasons.push(`⚠️ Low ESG score: ${stock.esg_score}/100 (below your high ESG preference)`);
+            }
+
+            // Valuation
+            if (stock.pe_ratio < 20) {
+                reasons.push(`💎 Potentially undervalued: P/E ratio of ${stock.pe_ratio}`);
+            } else if (stock.pe_ratio > 40) {
+                reasons.push(`💸 Premium valuation: High P/E ratio of ${stock.pe_ratio}`);
+            }
+
+            return reasons.join('<br>');
+        }
+
+        function analyzeStocks() {
+            const resultsDiv = document.getElementById('analysisResults');
+            
+            // Show loading
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing stocks based on your preferences...</p>
+                </div>
+            `;
+
+            // Get user preferences
+            const preferences = {
+                budget: parseFloat(document.getElementById('budget').value) || 10000,
+                riskTolerance: document.getElementById('riskTolerance').value,
+                timeframe: document.getElementById('timeframe').value,
+                sectors: [],
+                avoidList: document.getElementById('avoidList').value.toLowerCase().split('\n').map(s => s.trim()).filter(s => s),
+                esgImportance: document.getElementById('esgImportance').value
+            };
+
+            // Get selected sectors
+            ['tech', 'healthcare', 'finance', 'consumer', 'energy', 'telecommunications'].forEach(sector => {
+                if (document.getElementById(sector).checked) {
+                    preferences.sectors.push(sector === 'tech' ? 'technology' : sector);
+                }
+            });
+
+            // Simulate API delay
+            setTimeout(() => {
+                // Filter and score stocks
+                const scoredStocks = [];
+                
+                for (const [symbol, stock] of Object.entries(stockDatabase)) {
+                    // Check if stock should be avoided
+                    const shouldAvoid = preferences.avoidList.some(avoid => 
+                        stock.name.toLowerCase().includes(avoid) || symbol.toLowerCase().includes(avoid)
+                    );
+                    
+                    if (!shouldAvoid) {
+                        const score = calculateScore(stock, preferences);
+                        scoredStocks.push({ symbol, ...stock, score });
+                    }
+                }
+
+                // Sort by score
+                scoredStocks.sort((a, b) => b.score - a.score);
+
+                // Generate HTML
+                let html = '<div class="stock-grid">';
+                
+                scoredStocks.forEach(stock => {
+                    const affordableShares = (preferences.budget / stock.price).toFixed(3);
+                    const scoreClass = getScoreClass(stock.score);
+                    const recommendation = generateRecommendation(stock, preferences);
+                    
+                    html += `
+                        <div class="stock-card">
+                            <div class="stock-header">
+                                <div class="stock-symbol">${stock.symbol}</div>
+                                <div class="score ${scoreClass}">${stock.score}%</div>
+                            </div>
+                            <h4>${stock.name}</h4>
+                            <div class="stock-info">
+                                <div class="info-row">
+                                    <span>Price:</span>
+                                    <span>₱${stock.price.toFixed(2)}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>You Can Buy:</span>
+                                    <span>${affordableShares} shares</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Investment Value:</span>
+                                    <span>₱${(parseFloat(affordableShares) * stock.price).toFixed(2)}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>P/E Ratio:</span>
+                                    <span>${stock.pe_ratio}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Dividend Yield:</span>
+                                    <span>${(stock.dividend_yield * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>Revenue Growth:</span>
+                                    <span>${(stock.revenue_growth * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="info-row">
+                                    <span>ESG Score:</span>
+                                    <span>${stock.esg_score}/100</span>
+                                </div>
+                            </div>
+                            <div class="analysis-text">
+                                <strong>Why this score?</strong><br>
+                                ${recommendation}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                resultsDiv.innerHTML = html;
+            }, 1500);
+        }
+
+        // Initialize with default analysis
+        window.onload = function() {
+            setTimeout(analyzeStocks, 1000);
+        };
+    </script>
+</body>
+</html>
