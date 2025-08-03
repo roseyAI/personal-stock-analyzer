@@ -393,8 +393,7 @@
         // Test if JavaScript is working
         console.log("🚀 Stock Analyzer JavaScript loaded successfully!");
 
-        // Alpha Vantage configuration
-        const ALPHA_VANTAGE_API_KEY = '6Z5XAIQXW8DB8AO6';
+        // Secure API configuration - no exposed keys!
         const PHP_EXCHANGE_RATE = 56.65;
 
         // Stock metadata database
@@ -571,7 +570,7 @@
             }
         }
 
-        // Fetch stock price from Alpha Vantage with fallback
+        // Fetch stock price via secure Netlify function
         async function fetchStockPrice(symbol) {
             const cached = stockCache.get(symbol);
             if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
@@ -580,17 +579,20 @@
             }
 
             try {
-                console.log(`🔍 Fetching real-time data for ${symbol}...`);
+                console.log(`🔍 Fetching data for ${symbol} via secure Netlify function...`);
                 
-                // Try direct Alpha Vantage call
-                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
-                const response = await fetch(url);
+                // Call your secure Netlify function instead of Alpha Vantage directly
+                const response = await fetch(`/.netlify/functions/stock-price?symbol=${symbol}`);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
                 
                 if (data['Error Message']) {
                     throw new Error(data['Error Message']);
@@ -598,11 +600,12 @@
                 
                 if (data['Note']) {
                     console.warn(`⚠️ API Note for ${symbol}:`, data['Note']);
-                    return null; // Use fallback price
+                    return null;
                 }
 
                 const quote = data['Global Quote'];
                 if (!quote || !quote['05. price']) {
+                    console.warn(`Invalid response for ${symbol}:`, data);
                     throw new Error('Invalid response format');
                 }
 
@@ -613,18 +616,17 @@
                     lastUpdated: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
                 };
 
-                // Cache the result
                 stockCache.set(symbol, {
                     data: stockData,
                     timestamp: Date.now()
                 });
 
-                console.log(`✅ Successfully fetched ${symbol}: ₱${stockData.price.toFixed(2)}`);
+                console.log(`✅ Successfully fetched ${symbol}: ₱${stockData.price.toFixed(2)} via secure function`);
                 return stockData;
 
             } catch (error) {
                 console.error(`❌ Error fetching ${symbol}:`, error.message);
-                return null; // Will use estimated price
+                return null;
             }
         }
 
