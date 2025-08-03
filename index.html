@@ -317,19 +317,23 @@
     </div>
 
     <script>
-        // Alpha Vantage API Integration
+        // Alpha Vantage API Integration with CORS proxy
         const ALPHA_VANTAGE_API_KEY = '6Z5XAIQXW8DB8AO6';
-        const PHP_EXCHANGE_RATE = 56.65; // Update this periodically
+        const PHP_EXCHANGE_RATE = 56.65;
 
         // Cache for API responses (5 minute cache)
         const stockCache = new Map();
         const CACHE_DURATION = 5 * 60 * 1000;
 
+        // Use CORS proxy for browser compatibility
+        const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+        const BACKUP_PROXY = 'https://api.allorigins.win/raw?url=';
+
         // Rate limiter for Alpha Vantage (5 requests per minute)
         class RateLimiter {
             constructor() {
                 this.requests = [];
-                this.maxRequests = 5;
+                this.maxRequests = 4; // Slightly lower to be safe
             }
             
             async makeRequest(apiCall) {
@@ -337,7 +341,7 @@
                 this.requests = this.requests.filter(time => (now - time) < 60000);
                 
                 if (this.requests.length >= this.maxRequests) {
-                    const waitTime = 60000 - (now - this.requests[0]) + 1000;
+                    const waitTime = 60000 - (now - this.requests[0]) + 2000;
                     console.log(`Rate limit reached. Waiting ${Math.round(waitTime/1000)} seconds...`);
                     await new Promise(resolve => setTimeout(resolve, waitTime));
                 }
@@ -349,35 +353,60 @@
 
         const rateLimiter = new RateLimiter();
 
-        // Fetch real-time stock price from Alpha Vantage
+        // Fetch real-time stock price with fallback for CORS issues
         async function fetchStockPrice(symbol) {
             const cached = stockCache.get(symbol);
             if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+                console.log(`Using cached data for ${symbol}`);
                 return cached.data;
             }
 
             try {
+                console.log(`Fetching real-time data for ${symbol}...`);
+                
                 const response = await rateLimiter.makeRequest(async () => {
-                    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
-                    return await fetch(url);
+                    const baseUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+                    
+                    // Try direct call first, then with proxy if needed
+                    try {
+                        return await fetch(baseUrl, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                            }
+                        });
+                    } catch (corsError) {
+                        console.log(`CORS error for ${symbol}, trying with proxy...`);
+                        return await fetch(BACKUP_PROXY + encodeURIComponent(baseUrl));
+                    }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 
-                if (data['Error Message'] || data['Note']) {
-                    throw new Error(data['Error Message'] || 'API rate limit exceeded');
+                if (data['Error Message']) {
+                    throw new Error(data['Error Message']);
+                }
+                
+                if (data['Note']) {
+                    console.warn(`API Note for ${symbol}:`, data['Note']);
+                    throw new Error('API rate limit reached');
                 }
 
                 const quote = data['Global Quote'];
                 if (!quote || !quote['05. price']) {
-                    throw new Error('Invalid response format');
+                    console.warn(`Invalid response for ${symbol}:`, data);
+                    return null;
                 }
 
                 const stockData = {
                     price: parseFloat(quote['05. price']) * PHP_EXCHANGE_RATE,
                     change: parseFloat(quote['09. change']) * PHP_EXCHANGE_RATE,
                     changePercent: quote['10. change percent'],
-                    lastUpdated: new Date().toLocaleString()
+                    lastUpdated: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
                 };
 
                 stockCache.set(symbol, {
@@ -385,9 +414,11 @@
                     timestamp: Date.now()
                 });
 
+                console.log(`✅ Successfully fetched ${symbol}: ₱${stockData.price.toFixed(2)}`);
                 return stockData;
+
             } catch (error) {
-                console.error(`Error fetching ${symbol}:`, error);
+                console.error(`❌ Error fetching ${symbol}:`, error.message);
                 return null;
             }
         }
@@ -668,14 +699,15 @@
         }
 
         async function analyzeStocks() {
+            console.log("🚀 Starting stock analysis...");
             const resultsDiv = document.getElementById('analysisResults');
             
             // Show loading
             resultsDiv.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Fetching real-time stock prices from Alpha Vantage...</p>
-                    <small>This may take a moment due to API rate limits</small>
+                    <p>Fetching real-time stock prices...</p>
+                    <small>Please wait while we get the latest data</small>
                 </div>
             `;
 
@@ -697,16 +729,31 @@
                 }
             });
 
+            console.log("📊 User preferences:", preferences);
+
             try {
-                // Fetch real-time data for all stocks
-                const stockDatabase = {};
-                const symbols = Object.keys(stockMetadata);
+                // For demo purposes, let's start with fewer stocks to avoid rate limits
+                const prioritySymbols = ['AAPL', 'GOOGL', 'MSFT', 'NVDA', 'JNJ'];
+                const allSymbols = Object.keys(stockMetadata);
                 
-                let processedCount = 0;
-                for (const symbol of symbols) {
+                const stockDatabase = {};
+                let realTimeCount = 0;
+                
+                // Process priority stocks first
+                for (let i = 0; i < prioritySymbols.length; i++) {
+                    const symbol = prioritySymbols[i];
+                    const metadata = stockMetadata[symbol];
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Fetching ${symbol}... (${i + 1}/${prioritySymbols.length})</p>
+                            <small>Getting real-time data from Alpha Vantage</small>
+                        </div>
+                    `;
+                    
                     try {
                         const priceData = await fetchStockPrice(symbol);
-                        const metadata = stockMetadata[symbol];
                         
                         if (priceData) {
                             stockDatabase[symbol] = {
@@ -717,28 +764,41 @@
                                 lastUpdated: priceData.lastUpdated,
                                 isRealTime: true
                             };
+                            realTimeCount++;
+                            console.log(`✅ Got real-time data for ${symbol}`);
                         } else {
-                            // Fallback to estimated price if API fails
                             stockDatabase[symbol] = {
                                 ...metadata,
                                 price: getEstimatedPrice(symbol),
                                 isRealTime: false,
                                 warning: "Using estimated price - API unavailable"
                             };
+                            console.log(`⚠️ Using estimated price for ${symbol}`);
                         }
-                        
-                        processedCount++;
-                        resultsDiv.innerHTML = `
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <p>Fetching stock data... (${processedCount}/${symbols.length})</p>
-                                <small>Getting real-time prices from Alpha Vantage</small>
-                            </div>
-                        `;
                     } catch (error) {
                         console.error(`Error processing ${symbol}:`, error);
+                        stockDatabase[symbol] = {
+                            ...metadata,
+                            price: getEstimatedPrice(symbol),
+                            isRealTime: false,
+                            warning: "Using estimated price - API error"
+                        };
                     }
                 }
+
+                // Add remaining stocks with estimated prices to avoid rate limits
+                allSymbols.forEach(symbol => {
+                    if (!stockDatabase[symbol]) {
+                        stockDatabase[symbol] = {
+                            ...stockMetadata[symbol],
+                            price: getEstimatedPrice(symbol),
+                            isRealTime: false,
+                            warning: "Estimated price to avoid rate limits"
+                        };
+                    }
+                });
+
+                console.log(`📈 Processed ${Object.keys(stockDatabase).length} stocks, ${realTimeCount} with real-time data`);
 
                 // Filter and score stocks
                 const scoredStocks = [];
@@ -751,8 +811,15 @@
                     }
                 }
 
-                // Sort by score
-                scoredStocks.sort((a, b) => b.score - a.score);
+                // Sort by score (real-time data gets slight boost in display order)
+                scoredStocks.sort((a, b) => {
+                    if (a.score !== b.score) return b.score - a.score;
+                    if (a.isRealTime && !b.isRealTime) return -1;
+                    if (!a.isRealTime && b.isRealTime) return 1;
+                    return 0;
+                });
+
+                console.log(`🎯 Final results: ${scoredStocks.length} stocks after filtering`);
 
                 // Generate HTML
                 let html = '<div class="stock-grid">';
@@ -829,27 +896,33 @@
                 html += '</div>';
                 
                 // Add API status info
-                const realTimeCount = scoredStocks.filter(s => s.isRealTime).length;
                 html += `
                     <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
                         <small style="color: #6b7280;">
                             📊 Showing ${scoredStocks.length} stocks | 
                             🔴 ${realTimeCount} real-time prices | 
                             🟡 ${scoredStocks.length - realTimeCount} estimated prices<br>
-                            Data provided by Alpha Vantage API
+                            Real-time data from Alpha Vantage API • Estimated prices used to avoid rate limits
                         </small>
                     </div>
                 `;
                 
                 resultsDiv.innerHTML = html;
+                console.log("✅ Analysis complete!");
 
             } catch (error) {
-                console.error('Error in analysis:', error);
+                console.error('❌ Error in analysis:', error);
                 resultsDiv.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #ef4444;">
                         <h3>⚠️ Error Loading Stock Data</h3>
-                        <p>Unable to fetch real-time data. Please try again in a moment.</p>
-                        <small>Error: ${error.message}</small>
+                        <p>Having trouble connecting to the stock API.</p>
+                        <p>This is normal for new deployments - browser security restrictions.</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                            Try Again
+                        </button>
+                        <br><small style="color: #6b7280; margin-top: 10px; display: block;">
+                            Error details: ${error.message}
+                        </small>
                     </div>
                 `;
             }
