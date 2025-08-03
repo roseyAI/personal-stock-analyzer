@@ -279,7 +279,18 @@
 
                 <div class="preference-group">
                     <label>Companies to Avoid</label>
-                    <textarea id="avoidList" placeholder="e.g., Tesla, Meta (one per line)" rows="3">Tesla</textarea>
+                    <select id="avoidCriteria">
+                        <option value="none">No specific criteria</option>
+                        <option value="low_revenue_growth">Low Revenue Growth (< 5%)</option>
+                        <option value="high_debt">High Debt Companies (> 50%)</option>
+                        <option value="no_dividend">No Dividend Companies</option>
+                        <option value="high_volatility">High Volatility Stocks (> 40%)</option>
+                    </select>
+                </div>
+
+                <div class="preference-group">
+                    <label>Custom Companies to Avoid (Optional)</label>
+                    <input type="text" id="customAvoid" placeholder="e.g., TSLA, META (comma separated)">
                 </div>
 
                 <div class="preference-group">
@@ -306,15 +317,89 @@
     </div>
 
     <script>
-        // Sample stock data - in a real app, this would come from APIs
-        const stockDatabase = {
+        // Alpha Vantage API Integration
+        const ALPHA_VANTAGE_API_KEY = '6Z5XAIQXW8DB8AO6';
+        const PHP_EXCHANGE_RATE = 56.65; // Update this periodically
+
+        // Cache for API responses (5 minute cache)
+        const stockCache = new Map();
+        const CACHE_DURATION = 5 * 60 * 1000;
+
+        // Rate limiter for Alpha Vantage (5 requests per minute)
+        class RateLimiter {
+            constructor() {
+                this.requests = [];
+                this.maxRequests = 5;
+            }
+            
+            async makeRequest(apiCall) {
+                const now = Date.now();
+                this.requests = this.requests.filter(time => (now - time) < 60000);
+                
+                if (this.requests.length >= this.maxRequests) {
+                    const waitTime = 60000 - (now - this.requests[0]) + 1000;
+                    console.log(`Rate limit reached. Waiting ${Math.round(waitTime/1000)} seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+                
+                this.requests.push(now);
+                return await apiCall();
+            }
+        }
+
+        const rateLimiter = new RateLimiter();
+
+        // Fetch real-time stock price from Alpha Vantage
+        async function fetchStockPrice(symbol) {
+            const cached = stockCache.get(symbol);
+            if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+                return cached.data;
+            }
+
+            try {
+                const response = await rateLimiter.makeRequest(async () => {
+                    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+                    return await fetch(url);
+                });
+
+                const data = await response.json();
+                
+                if (data['Error Message'] || data['Note']) {
+                    throw new Error(data['Error Message'] || 'API rate limit exceeded');
+                }
+
+                const quote = data['Global Quote'];
+                if (!quote || !quote['05. price']) {
+                    throw new Error('Invalid response format');
+                }
+
+                const stockData = {
+                    price: parseFloat(quote['05. price']) * PHP_EXCHANGE_RATE,
+                    change: parseFloat(quote['09. change']) * PHP_EXCHANGE_RATE,
+                    changePercent: quote['10. change percent'],
+                    lastUpdated: new Date().toLocaleString()
+                };
+
+                stockCache.set(symbol, {
+                    data: stockData,
+                    timestamp: Date.now()
+                });
+
+                return stockData;
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                return null;
+            }
+        }
+
+        // Enhanced stock database with sector info
+        const stockMetadata = {
             'AAPL': {
                 name: 'Apple Inc.',
                 sector: 'Technology',
-                price: 10494.25, // ₱185.25 * 56.65 USD to PHP
                 pe_ratio: 28.5,
-                dividend_yield: 0.5,
-                market_cap: '161.5T',
+                dividend_yield: 0.005,
+                market_cap: '2.85T',
                 revenue_growth: 0.08,
                 debt_ratio: 0.35,
                 esg_score: 82,
@@ -324,10 +409,9 @@
             'GOOGL': {
                 name: 'Alphabet Inc.',
                 sector: 'Technology',
-                price: 8077.63, // ₱142.50 * 56.65
                 pe_ratio: 24.8,
                 dividend_yield: 0.0,
-                market_cap: '99.1T',
+                market_cap: '1.75T',
                 revenue_growth: 0.12,
                 debt_ratio: 0.15,
                 esg_score: 78,
@@ -337,10 +421,9 @@
             'MSFT': {
                 name: 'Microsoft Corporation',
                 sector: 'Technology',
-                price: 23842.15, // ₱420.85 * 56.65
                 pe_ratio: 32.1,
-                dividend_yield: 0.7,
-                market_cap: '176.8T',
+                dividend_yield: 0.007,
+                market_cap: '3.12T',
                 revenue_growth: 0.15,
                 debt_ratio: 0.20,
                 esg_score: 85,
@@ -350,10 +433,9 @@
             'NVDA': {
                 name: 'NVIDIA Corporation',
                 sector: 'Technology',
-                price: 49596.23, // ₱875.30 * 56.65
                 pe_ratio: 65.2,
-                dividend_yield: 0.03,
-                market_cap: '121.8T',
+                dividend_yield: 0.0003,
+                market_cap: '2.15T',
                 revenue_growth: 0.58,
                 debt_ratio: 0.25,
                 esg_score: 75,
@@ -363,10 +445,9 @@
             'JNJ': {
                 name: 'Johnson & Johnson',
                 sector: 'Healthcare',
-                price: 8993.94, // ₱158.75 * 56.65
                 pe_ratio: 18.5,
-                dividend_yield: 3.1,
-                market_cap: '24.1T',
+                dividend_yield: 0.031,
+                market_cap: '425B',
                 revenue_growth: 0.05,
                 debt_ratio: 0.45,
                 esg_score: 88,
@@ -376,10 +457,9 @@
             'JPM': {
                 name: 'JPMorgan Chase & Co.',
                 sector: 'Finance',
-                price: 11248.01, // ₱198.45 * 56.65
                 pe_ratio: 12.8,
-                dividend_yield: 2.4,
-                market_cap: '33.0T',
+                dividend_yield: 0.024,
+                market_cap: '582B',
                 revenue_growth: 0.07,
                 debt_ratio: 0.15,
                 esg_score: 72,
@@ -389,10 +469,9 @@
             'KO': {
                 name: 'The Coca-Cola Company',
                 sector: 'Consumer Goods',
-                price: 3522.50, // ₱62.18 * 56.65
                 pe_ratio: 25.4,
-                dividend_yield: 3.0,
-                market_cap: '15.2T',
+                dividend_yield: 0.030,
+                market_cap: '268B',
                 revenue_growth: 0.04,
                 debt_ratio: 0.55,
                 esg_score: 76,
@@ -402,10 +481,9 @@
             'XOM': {
                 name: 'Exxon Mobil Corporation',
                 sector: 'Energy',
-                price: 6332.85, // ₱111.80 * 56.65
                 pe_ratio: 13.2,
-                dividend_yield: 5.8,
-                market_cap: '26.8T',
+                dividend_yield: 0.058,
+                market_cap: '268B',
                 revenue_growth: 0.18,
                 debt_ratio: 0.28,
                 esg_score: 65,
@@ -415,10 +493,9 @@
             'CVX': {
                 name: 'Chevron Corporation',
                 sector: 'Energy',
-                price: 8530.95, // ₱150.55 * 56.65
                 pe_ratio: 14.8,
-                dividend_yield: 3.2,
-                market_cap: '31.2T',
+                dividend_yield: 0.032,
+                market_cap: '312B',
                 revenue_growth: 0.15,
                 debt_ratio: 0.22,
                 esg_score: 68,
@@ -428,10 +505,9 @@
             'VZ': {
                 name: 'Verizon Communications Inc.',
                 sector: 'Telecommunications',
-                price: 2277.85, // ₱40.20 * 56.65
                 pe_ratio: 8.9,
-                dividend_yield: 6.8,
-                market_cap: '9.6T',
+                dividend_yield: 0.068,
+                market_cap: '168B',
                 revenue_growth: 0.02,
                 debt_ratio: 0.58,
                 esg_score: 74,
@@ -441,10 +517,9 @@
             'T': {
                 name: 'AT&T Inc.',
                 sector: 'Telecommunications',
-                price: 996.33, // ₱17.58 * 56.65
                 pe_ratio: 7.2,
-                dividend_yield: 7.1,
-                market_cap: '7.1T',
+                dividend_yield: 0.071,
+                market_cap: '125B',
                 revenue_growth: -0.01,
                 debt_ratio: 0.65,
                 esg_score: 71,
@@ -490,7 +565,34 @@
             return Math.round((score / maxScore) * 100);
         }
 
-        function getScoreClass(score) {
+        function shouldAvoidStock(stock, avoidCriteria, customAvoid) {
+            // Check custom avoid list
+            if (customAvoid) {
+                const customList = customAvoid.toLowerCase().split(',').map(s => s.trim());
+                const stockNameMatch = customList.some(avoid => 
+                    stock.name.toLowerCase().includes(avoid) || 
+                    Object.keys(stockMetadata).find(symbol => 
+                        stockMetadata[symbol].name === stock.name
+                    )?.toLowerCase().includes(avoid)
+                );
+                if (stockNameMatch) return true;
+            }
+
+            // Check criteria-based avoidance
+            switch (avoidCriteria) {
+                case 'low_revenue_growth':
+                    return stock.revenue_growth < 0.05;
+                case 'high_debt':
+                    return stock.debt_ratio > 0.50;
+                case 'no_dividend':
+                    return stock.dividend_yield === 0;
+                case 'high_volatility':
+                    return stock.volatility > 0.40;
+                case 'none':
+                default:
+                    return false;
+            }
+        }
             if (score >= 80) return 'high';
             if (score >= 60) return 'medium';
             return 'low';
@@ -565,24 +667,26 @@
             return reasons.join('<br>');
         }
 
-        function analyzeStocks() {
+        async function analyzeStocks() {
             const resultsDiv = document.getElementById('analysisResults');
             
             // Show loading
             resultsDiv.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Analyzing stocks based on your preferences...</p>
+                    <p>Fetching real-time stock prices from Alpha Vantage...</p>
+                    <small>This may take a moment due to API rate limits</small>
                 </div>
             `;
 
             // Get user preferences
             const preferences = {
-                budget: parseFloat(document.getElementById('budget').value) || 10000,
+                budget: parseFloat(document.getElementById('budget').value) || 500000,
                 riskTolerance: document.getElementById('riskTolerance').value,
                 timeframe: document.getElementById('timeframe').value,
                 sectors: [],
-                avoidList: document.getElementById('avoidList').value.toLowerCase().split('\n').map(s => s.trim()).filter(s => s),
+                avoidCriteria: document.getElementById('avoidCriteria').value,
+                customAvoid: document.getElementById('customAvoid').value,
                 esgImportance: document.getElementById('esgImportance').value
             };
 
@@ -593,18 +697,55 @@
                 }
             });
 
-            // Simulate API delay
-            setTimeout(() => {
+            try {
+                // Fetch real-time data for all stocks
+                const stockDatabase = {};
+                const symbols = Object.keys(stockMetadata);
+                
+                let processedCount = 0;
+                for (const symbol of symbols) {
+                    try {
+                        const priceData = await fetchStockPrice(symbol);
+                        const metadata = stockMetadata[symbol];
+                        
+                        if (priceData) {
+                            stockDatabase[symbol] = {
+                                ...metadata,
+                                price: priceData.price,
+                                change: priceData.change,
+                                changePercent: priceData.changePercent,
+                                lastUpdated: priceData.lastUpdated,
+                                isRealTime: true
+                            };
+                        } else {
+                            // Fallback to estimated price if API fails
+                            stockDatabase[symbol] = {
+                                ...metadata,
+                                price: getEstimatedPrice(symbol),
+                                isRealTime: false,
+                                warning: "Using estimated price - API unavailable"
+                            };
+                        }
+                        
+                        processedCount++;
+                        resultsDiv.innerHTML = `
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <p>Fetching stock data... (${processedCount}/${symbols.length})</p>
+                                <small>Getting real-time prices from Alpha Vantage</small>
+                            </div>
+                        `;
+                    } catch (error) {
+                        console.error(`Error processing ${symbol}:`, error);
+                    }
+                }
+
                 // Filter and score stocks
                 const scoredStocks = [];
                 
                 for (const [symbol, stock] of Object.entries(stockDatabase)) {
                     // Check if stock should be avoided
-                    const shouldAvoid = preferences.avoidList.some(avoid => 
-                        stock.name.toLowerCase().includes(avoid) || symbol.toLowerCase().includes(avoid)
-                    );
-                    
-                    if (!shouldAvoid) {
+                    if (!shouldAvoidStock(stock, preferences.avoidCriteria, preferences.customAvoid)) {
                         const score = calculateScore(stock, preferences);
                         scoredStocks.push({ symbol, ...stock, score });
                     }
@@ -621,6 +762,10 @@
                     const scoreClass = getScoreClass(stock.score);
                     const recommendation = generateRecommendation(stock, preferences);
                     
+                    const priceDisplay = stock.isRealTime ? 
+                        `₱${stock.price.toFixed(2)} <small style="color: #10b981;">●LIVE</small>` : 
+                        `₱${stock.price.toFixed(2)} <small style="color: #f59e0b;">●EST</small>`;
+                    
                     html += `
                         <div class="stock-card">
                             <div class="stock-header">
@@ -631,7 +776,7 @@
                             <div class="stock-info">
                                 <div class="info-row">
                                     <span>Price:</span>
-                                    <span>₱${stock.price.toFixed(2)}</span>
+                                    <span>${priceDisplay}</span>
                                 </div>
                                 <div class="info-row">
                                     <span>You Can Buy:</span>
@@ -641,6 +786,14 @@
                                     <span>Investment Value:</span>
                                     <span>₱${(parseFloat(affordableShares) * stock.price).toFixed(2)}</span>
                                 </div>
+                                ${stock.change ? `
+                                <div class="info-row">
+                                    <span>Daily Change:</span>
+                                    <span style="color: ${stock.change >= 0 ? '#10b981' : '#ef4444'}">
+                                        ${stock.change >= 0 ? '+' : ''}₱${stock.change.toFixed(2)} (${stock.changePercent})
+                                    </span>
+                                </div>
+                                ` : ''}
                                 <div class="info-row">
                                     <span>P/E Ratio:</span>
                                     <span>${stock.pe_ratio}</span>
@@ -657,18 +810,67 @@
                                     <span>ESG Score:</span>
                                     <span>${stock.esg_score}/100</span>
                                 </div>
+                                ${stock.lastUpdated ? `
+                                <div class="info-row" style="font-size: 0.8rem; color: #6b7280;">
+                                    <span>Last Updated:</span>
+                                    <span>${stock.lastUpdated}</span>
+                                </div>
+                                ` : ''}
                             </div>
                             <div class="analysis-text">
                                 <strong>Why this score?</strong><br>
                                 ${recommendation}
+                                ${stock.warning ? `<br><br><small style="color: #f59e0b;">⚠️ ${stock.warning}</small>` : ''}
                             </div>
                         </div>
                     `;
                 });
                 
                 html += '</div>';
+                
+                // Add API status info
+                const realTimeCount = scoredStocks.filter(s => s.isRealTime).length;
+                html += `
+                    <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
+                        <small style="color: #6b7280;">
+                            📊 Showing ${scoredStocks.length} stocks | 
+                            🔴 ${realTimeCount} real-time prices | 
+                            🟡 ${scoredStocks.length - realTimeCount} estimated prices<br>
+                            Data provided by Alpha Vantage API
+                        </small>
+                    </div>
+                `;
+                
                 resultsDiv.innerHTML = html;
-            }, 1500);
+
+            } catch (error) {
+                console.error('Error in analysis:', error);
+                resultsDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        <h3>⚠️ Error Loading Stock Data</h3>
+                        <p>Unable to fetch real-time data. Please try again in a moment.</p>
+                        <small>Error: ${error.message}</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Estimated prices fallback (in case API fails)
+        function getEstimatedPrice(symbol) {
+            const estimates = {
+                'AAPL': 10500,
+                'GOOGL': 8000,
+                'MSFT': 24000,
+                'NVDA': 50000,
+                'JNJ': 9000,
+                'JPM': 11000,
+                'KO': 3500,
+                'XOM': 6300,
+                'CVX': 8500,
+                'VZ': 2300,
+                'T': 1000
+            };
+            return estimates[symbol] || 5000;
         }
 
         // Initialize with default analysis
