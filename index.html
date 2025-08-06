@@ -69,7 +69,7 @@
             color: #2d3748;
         }
 
-        .preference-group input, .preference-group select, .preference-group textarea {
+        .preference-group input, .preference-group select {
             width: 100%;
             padding: 10px;
             border: 2px solid #e2e8f0;
@@ -78,7 +78,7 @@
             transition: border-color 0.3s ease;
         }
 
-        .preference-group input:focus, .preference-group select:focus, .preference-group textarea:focus {
+        .preference-group input:focus, .preference-group select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -248,6 +248,10 @@
             line-height: 1;
         }
 
+        .close:hover {
+            color: #667eea;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -325,6 +329,10 @@
                             <input type="checkbox" id="telecommunications">
                             <label for="telecommunications">Telecommunications</label>
                         </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="includeNew">
+                            <label for="includeNew">Include New/Promising Stocks</label>
+                        </div>
                     </div>
                 </div>
 
@@ -370,7 +378,6 @@
         </div>
     </div>
 
-    <!-- ESG Info Modal -->
     <div id="esgModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeESGInfo()">&times;</span>
@@ -390,403 +397,129 @@
     </div>
 
     <script>
-        // Test if JavaScript is working
         console.log("🚀 Stock Analyzer JavaScript loaded successfully!");
 
-        // Secure API configuration - no exposed keys!
         const PHP_EXCHANGE_RATE = 56.65;
 
-        // Stock metadata database
         const stockMetadata = {
-            'AAPL': {
-                name: 'Apple Inc.',
-                sector: 'Technology',
-                pe_ratio: 28.5,
-                dividend_yield: 0.005,
-                market_cap: '2.85T',
-                revenue_growth: 0.08,
-                debt_ratio: 0.35,
-                esg_score: 82,
-                volatility: 0.25,
-                description: 'Leading technology company with strong ecosystem and brand loyalty.'
-            },
-            'GOOGL': {
-                name: 'Alphabet Inc.',
-                sector: 'Technology',
-                pe_ratio: 24.8,
-                dividend_yield: 0.0,
-                market_cap: '1.75T',
-                revenue_growth: 0.12,
-                debt_ratio: 0.15,
-                esg_score: 78,
-                volatility: 0.30,
-                description: 'Dominant search engine with strong AI capabilities and cloud growth.'
-            },
-            'MSFT': {
-                name: 'Microsoft Corporation',
-                sector: 'Technology',
-                pe_ratio: 32.1,
-                dividend_yield: 0.007,
-                market_cap: '3.12T',
-                revenue_growth: 0.15,
-                debt_ratio: 0.20,
-                esg_score: 85,
-                volatility: 0.22,
-                description: 'Cloud computing leader with strong enterprise software presence.'
-            },
-            'NVDA': {
-                name: 'NVIDIA Corporation',
-                sector: 'Technology',
-                pe_ratio: 65.2,
-                dividend_yield: 0.0003,
-                market_cap: '2.15T',
-                revenue_growth: 0.58,
-                debt_ratio: 0.25,
-                esg_score: 75,
-                volatility: 0.45,
-                description: 'AI chip leader with strong growth in data center and gaming markets.'
-            },
-            'JNJ': {
-                name: 'Johnson & Johnson',
-                sector: 'Healthcare',
-                pe_ratio: 18.5,
-                dividend_yield: 0.031,
-                market_cap: '425B',
-                revenue_growth: 0.05,
-                debt_ratio: 0.45,
-                esg_score: 88,
-                volatility: 0.18,
-                description: 'Diversified healthcare company with strong pharmaceutical pipeline.'
-            },
-            'JPM': {
-                name: 'JPMorgan Chase & Co.',
-                sector: 'Finance',
-                pe_ratio: 12.8,
-                dividend_yield: 0.024,
-                market_cap: '582B',
-                revenue_growth: 0.07,
-                debt_ratio: 0.15,
-                esg_score: 72,
-                volatility: 0.28,
-                description: 'Largest US bank with strong investment banking and consumer services.'
-            },
-            'KO': {
-                name: 'The Coca-Cola Company',
-                sector: 'Consumer Goods',
-                pe_ratio: 25.4,
-                dividend_yield: 0.030,
-                market_cap: '268B',
-                revenue_growth: 0.04,
-                debt_ratio: 0.55,
-                esg_score: 76,
-                volatility: 0.16,
-                description: 'Global beverage leader with strong brand portfolio and dividend history.'
-            },
-            'XOM': {
-                name: 'Exxon Mobil Corporation',
-                sector: 'Energy',
-                pe_ratio: 13.2,
-                dividend_yield: 0.058,
-                market_cap: '268B',
-                revenue_growth: 0.18,
-                debt_ratio: 0.28,
-                esg_score: 65,
-                volatility: 0.35,
-                description: 'Leading integrated oil and gas company with strong dividend yield.'
-            },
-            'CVX': {
-                name: 'Chevron Corporation',
-                sector: 'Energy',
-                pe_ratio: 14.8,
-                dividend_yield: 0.032,
-                market_cap: '312B',
-                revenue_growth: 0.15,
-                debt_ratio: 0.22,
-                esg_score: 68,
-                volatility: 0.32,
-                description: 'Integrated energy company with strong cash flow and shareholder returns.'
-            },
-            'VZ': {
-                name: 'Verizon Communications Inc.',
-                sector: 'Telecommunications',
-                pe_ratio: 8.9,
-                dividend_yield: 0.068,
-                market_cap: '168B',
-                revenue_growth: 0.02,
-                debt_ratio: 0.58,
-                esg_score: 74,
-                volatility: 0.20,
-                description: 'Leading telecom provider with strong dividend and 5G infrastructure.'
-            },
-            'T': {
-                name: 'AT&T Inc.',
-                sector: 'Telecommunications',
-                pe_ratio: 7.2,
-                dividend_yield: 0.071,
-                market_cap: '125B',
-                revenue_growth: -0.01,
-                debt_ratio: 0.65,
-                esg_score: 71,
-                volatility: 0.25,
-                description: 'Major telecommunications company with high dividend yield and wireless focus.'
-            }
+            'AAPL': { name: 'Apple Inc.', sector: 'Technology', pe_ratio: 28.5, dividend_yield: 0.005, revenue_growth: 0.08, debt_ratio: 0.35, esg_score: 82, volatility: 0.25, description: 'Leading technology company with strong ecosystem and brand loyalty.', isNew: false },
+            'GOOGL': { name: 'Alphabet Inc.', sector: 'Technology', pe_ratio: 24.8, dividend_yield: 0.0, revenue_growth: 0.12, debt_ratio: 0.15, esg_score: 78, volatility: 0.30, description: 'Dominant search engine with strong AI capabilities and cloud growth.', isNew: false },
+            'MSFT': { name: 'Microsoft Corporation', sector: 'Technology', pe_ratio: 32.1, dividend_yield: 0.007, revenue_growth: 0.15, debt_ratio: 0.20, esg_score: 85, volatility: 0.22, description: 'Cloud computing leader with strong enterprise software presence.', isNew: false },
+            'NVDA': { name: 'NVIDIA Corporation', sector: 'Technology', pe_ratio: 65.2, dividend_yield: 0.0003, revenue_growth: 0.58, debt_ratio: 0.25, esg_score: 75, volatility: 0.45, description: 'AI chip leader with strong growth in data center and gaming markets.', isNew: false },
+            'JNJ': { name: 'Johnson & Johnson', sector: 'Healthcare', pe_ratio: 18.5, dividend_yield: 0.031, revenue_growth: 0.05, debt_ratio: 0.45, esg_score: 88, volatility: 0.18, description: 'Diversified healthcare company with strong pharmaceutical pipeline.', isNew: false },
+            'JPM': { name: 'JPMorgan Chase & Co.', sector: 'Finance', pe_ratio: 12.8, dividend_yield: 0.024, revenue_growth: 0.07, debt_ratio: 0.15, esg_score: 72, volatility: 0.28, description: 'Largest US bank with strong investment banking and consumer services.', isNew: false },
+            'KO': { name: 'The Coca-Cola Company', sector: 'Consumer Goods', pe_ratio: 25.4, dividend_yield: 0.030, revenue_growth: 0.04, debt_ratio: 0.55, esg_score: 76, volatility: 0.16, description: 'Global beverage leader with strong brand portfolio and dividend history.', isNew: false },
+            'XOM': { name: 'Exxon Mobil Corporation', sector: 'Energy', pe_ratio: 13.2, dividend_yield: 0.058, revenue_growth: 0.18, debt_ratio: 0.28, esg_score: 65, volatility: 0.35, description: 'Leading integrated oil and gas company with strong dividend yield.', isNew: false },
+            'CVX': { name: 'Chevron Corporation', sector: 'Energy', pe_ratio: 14.8, dividend_yield: 0.032, revenue_growth: 0.15, debt_ratio: 0.22, esg_score: 68, volatility: 0.32, description: 'Integrated energy company with strong cash flow and shareholder returns.', isNew: false },
+            'VZ': { name: 'Verizon Communications Inc.', sector: 'Telecommunications', pe_ratio: 8.9, dividend_yield: 0.068, revenue_growth: 0.02, debt_ratio: 0.58, esg_score: 74, volatility: 0.20, description: 'Leading telecom provider with strong dividend and 5G infrastructure.', isNew: false },
+            'T': { name: 'AT&T Inc.', sector: 'Telecommunications', pe_ratio: 7.2, dividend_yield: 0.071, revenue_growth: -0.01, debt_ratio: 0.65, esg_score: 71, volatility: 0.25, description: 'Major telecommunications company with high dividend yield and wireless focus.', isNew: false },
+            'PLTR': { name: 'Palantir Technologies Inc.', sector: 'Technology', pe_ratio: 45.2, dividend_yield: 0.0, revenue_growth: 0.24, debt_ratio: 0.05, esg_score: 65, volatility: 0.55, description: 'Data analytics company serving government and enterprise clients with AI-powered platforms.', isNew: true },
+            'RKLB': { name: 'Rocket Lab USA Inc.', sector: 'Technology', pe_ratio: -12.5, dividend_yield: 0.0, revenue_growth: 0.32, debt_ratio: 0.15, esg_score: 70, volatility: 0.65, description: 'Small satellite launch provider with growing space services business.', isNew: true },
+            'SOFI': { name: 'SoFi Technologies Inc.', sector: 'Finance', pe_ratio: 28.4, dividend_yield: 0.0, revenue_growth: 0.28, debt_ratio: 0.35, esg_score: 72, volatility: 0.58, description: 'Digital personal finance company offering lending, investing, and banking services.', isNew: true },
+            'RIVN': { name: 'Rivian Automotive Inc.', sector: 'Consumer Goods', pe_ratio: -8.2, dividend_yield: 0.0, revenue_growth: 0.45, debt_ratio: 0.25, esg_score: 78, volatility: 0.72, description: 'Electric vehicle manufacturer focused on pickup trucks and delivery vans.', isNew: true },
+            'UPST': { name: 'Upstart Holdings Inc.', sector: 'Finance', pe_ratio: 15.8, dividend_yield: 0.0, revenue_growth: 0.18, debt_ratio: 0.20, esg_score: 68, volatility: 0.68, description: 'AI-powered lending platform that partners with banks and credit unions.', isNew: true }
         };
 
-        // Estimated prices (fallback if API fails)
         const estimatedPrices = {
-            'AAPL': 10500,
-            'GOOGL': 8000,
-            'MSFT': 24000,
-            'NVDA': 50000,
-            'JNJ': 9000,
-            'JPM': 11000,
-            'KO': 3500,
-            'XOM': 6300,
-            'CVX': 8500,
-            'VZ': 2300,
-            'T': 1000
+            'AAPL': 10500, 'GOOGL': 8000, 'MSFT': 24000, 'NVDA': 50000, 'JNJ': 9000, 'JPM': 11000, 'KO': 3500, 'XOM': 6300, 'CVX': 8500, 'VZ': 2300, 'T': 1000, 'PLTR': 850, 'RKLB': 280, 'SOFI': 450, 'RIVN': 680, 'UPST': 1200
         };
 
-        // Cache for API responses
         const stockCache = new Map();
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-        // Test function to verify everything is working
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        async function fetchStockPrice(symbol) {
+            try {
+                const response = await fetch(`/.netlify/functions/stock-price?symbol=${symbol}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.warn(`API error for ${symbol}:`, data.error);
+                    return null;
+                }
+                
+                // Extract price from Alpha Vantage response
+                const timeSeries = data['Time Series (5min)'] || data['Time Series (Daily)'];
+                if (!timeSeries) {
+                    console.warn(`No time series data for ${symbol}`);
+                    return null;
+                }
+                
+                const latestTime = Object.keys(timeSeries)[0];
+                const latestData = timeSeries[latestTime];
+                const price = parseFloat(latestData['4. close']);
+                
+                return price * PHP_EXCHANGE_RATE; // Convert USD to PHP
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                return null;
+            }
+        }
+
+        function selectStocksForLiveData(availableSymbols, preferences, maxCount) {
+            const prioritySymbols = [];
+            const regularSymbols = [];
+            
+            availableSymbols.forEach(function(symbol) {
+                const stock = stockMetadata[symbol];
+                if (preferences.sectors.includes(stock.sector.toLowerCase())) {
+                    prioritySymbols.push(symbol);
+                } else {
+                    regularSymbols.push(symbol);
+                }
+            });
+            
+            const shufflePriority = shuffleArray(prioritySymbols);
+            const shuffleRegular = shuffleArray(regularSymbols);
+            
+            const selectedStocks = [];
+            selectedStocks.push(...shufflePriority);
+            
+            if (selectedStocks.length < maxCount) {
+                const remaining = maxCount - selectedStocks.length;
+                selectedStocks.push(...shuffleRegular.slice(0, remaining));
+            }
+            
+            return selectedStocks.slice(0, maxCount);
+        }
+
         function startAnalysis() {
             console.log("🎯 startAnalysis function called!");
             try {
                 analyzeStocks();
             } catch (error) {
                 console.error("❌ Error calling analyzeStocks:", error);
-                document.getElementById('analysisResults').innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #ef4444;">
-                        <h3>JavaScript Error</h3>
-                        <p>Error: ${error.message}</p>
-                        <button onclick="location.reload()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
-                            Reload Page
-                        </button>
-                    </div>
-                `;
+                document.getElementById('analysisResults').innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;"><h3>JavaScript Error</h3><p>Error: ' + error.message + '</p></div>';
             }
         }
 
-        // Fetch stock price via secure Netlify function
-        async function fetchStockPrice(symbol) {
-            const cached = stockCache.get(symbol);
-            if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-                console.log(`📋 Using cached data for ${symbol}`);
-                return cached.data;
-            }
-
-            try {
-                console.log(`🔍 Fetching data for ${symbol} via secure Netlify function...`);
-                
-                // Call your secure Netlify function instead of Alpha Vantage directly
-                const response = await fetch(`/.netlify/functions/stock-price?symbol=${symbol}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
-                if (data['Error Message']) {
-                    throw new Error(data['Error Message']);
-                }
-                
-                if (data['Note']) {
-                    console.warn(`⚠️ API Note for ${symbol}:`, data['Note']);
-                    return null;
-                }
-
-                const quote = data['Global Quote'];
-                if (!quote || !quote['05. price']) {
-                    console.warn(`Invalid response for ${symbol}:`, data);
-                    throw new Error('Invalid response format');
-                }
-
-                const stockData = {
-                    price: parseFloat(quote['05. price']) * PHP_EXCHANGE_RATE,
-                    change: parseFloat(quote['09. change']) * PHP_EXCHANGE_RATE,
-                    changePercent: quote['10. change percent'],
-                    lastUpdated: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })
-                };
-
-                stockCache.set(symbol, {
-                    data: stockData,
-                    timestamp: Date.now()
-                });
-
-                console.log(`✅ Successfully fetched ${symbol}: ₱${stockData.price.toFixed(2)} via secure function`);
-                return stockData;
-
-            } catch (error) {
-                console.error(`❌ Error fetching ${symbol}:`, error.message);
-                return null;
-            }
-        }
-
-        // Check if stock should be avoided
-        function shouldAvoidStock(stock, avoidCriteria, customAvoid) {
-            // Check custom avoid list
-            if (customAvoid) {
-                const customList = customAvoid.toLowerCase().split(',').map(s => s.trim());
-                const stockSymbol = Object.keys(stockMetadata).find(symbol => 
-                    stockMetadata[symbol].name === stock.name
-                );
-                const symbolMatch = customList.some(avoid => 
-                    stock.name.toLowerCase().includes(avoid) || 
-                    (stockSymbol && stockSymbol.toLowerCase().includes(avoid))
-                );
-                if (symbolMatch) return true;
-            }
-
-            // Check criteria-based avoidance
-            switch (avoidCriteria) {
-                case 'low_revenue_growth':
-                    return stock.revenue_growth < 0.05;
-                case 'high_debt':
-                    return stock.debt_ratio > 0.50;
-                case 'no_dividend':
-                    return stock.dividend_yield === 0;
-                case 'high_volatility':
-                    return stock.volatility > 0.40;
-                case 'none':
-                default:
-                    return false;
-            }
-        }
-
-        // Calculate stock score based on preferences
-        function calculateScore(stock, preferences) {
-            let score = 0;
-            let maxScore = 0;
-
-            // Risk tolerance scoring (25 points)
-            maxScore += 25;
-            if (preferences.riskTolerance === 'conservative' && stock.volatility < 0.25) score += 25;
-            else if (preferences.riskTolerance === 'moderate' && stock.volatility >= 0.25 && stock.volatility < 0.35) score += 25;
-            else if (preferences.riskTolerance === 'aggressive' && stock.volatility >= 0.35) score += 25;
-            else if (preferences.riskTolerance === 'moderate' && stock.volatility < 0.25) score += 20;
-
-            // Sector preference (20 points)
-            maxScore += 20;
-            if (preferences.sectors.includes(stock.sector.toLowerCase())) score += 20;
-
-            // ESG scoring (15 points)
-            maxScore += 15;
-            if (preferences.esgImportance === 'high' && stock.esg_score >= 80) score += 15;
-            else if (preferences.esgImportance === 'medium' && stock.esg_score >= 70) score += 15;
-            else if (preferences.esgImportance === 'low') score += 15;
-            else if (stock.esg_score >= 75) score += 10;
-
-            // Growth potential (20 points)
-            maxScore += 20;
-            if (stock.revenue_growth >= 0.15) score += 20;
-            else if (stock.revenue_growth >= 0.08) score += 15;
-            else if (stock.revenue_growth >= 0.05) score += 10;
-
-            // Financial health (20 points)
-            maxScore += 20;
-            if (stock.debt_ratio < 0.3) score += 20;
-            else if (stock.debt_ratio < 0.5) score += 15;
-            else score += 5;
-
-            return Math.round((score / maxScore) * 100);
-        }
-
-        // Get score styling class
-        function getScoreClass(score) {
-            if (score >= 80) return 'high';
-            if (score >= 60) return 'medium';
-            return 'low';
-        }
-
-        // Generate detailed recommendation
-        function generateRecommendation(stock, preferences) {
-            let reasons = [];
-            
-            // Risk match analysis
-            const riskMatch = (preferences.riskTolerance === 'conservative' && stock.volatility < 0.25) ||
-                            (preferences.riskTolerance === 'moderate' && stock.volatility >= 0.25 && stock.volatility < 0.35) ||
-                            (preferences.riskTolerance === 'aggressive' && stock.volatility >= 0.35);
-            
-            if (riskMatch) {
-                reasons.push(`✅ Perfect risk match for ${preferences.riskTolerance} investors (${(stock.volatility * 100).toFixed(0)}% volatility)`);
-            } else {
-                reasons.push(`⚠️ Risk mismatch: ${stock.volatility < 0.25 ? 'Lower' : 'Higher'} risk than your ${preferences.riskTolerance} preference`);
-            }
-
-            // Sector preference
-            if (preferences.sectors.includes(stock.sector.toLowerCase())) {
-                reasons.push(`✅ Matches your preferred ${stock.sector} sector`);
-            } else {
-                reasons.push(`ℹ️ Outside preferred sectors, but could provide diversification`);
-            }
-
-            // Growth analysis
-            if (stock.revenue_growth >= 0.15) {
-                reasons.push(`🚀 Strong growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
-            } else if (stock.revenue_growth >= 0.08) {
-                reasons.push(`📈 Solid growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
-            } else if (stock.revenue_growth >= 0.05) {
-                reasons.push(`📊 Steady growth: ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
-            } else {
-                reasons.push(`⚠️ Slow growth: Only ${(stock.revenue_growth * 100).toFixed(1)}% revenue growth`);
-            }
-
-            // Financial health
-            if (stock.debt_ratio < 0.3) {
-                reasons.push(`💪 Strong balance sheet: Low debt ratio (${(stock.debt_ratio * 100).toFixed(0)}%)`);
-            } else if (stock.debt_ratio < 0.5) {
-                reasons.push(`📊 Moderate debt levels: ${(stock.debt_ratio * 100).toFixed(0)}% debt ratio`);
-            } else {
-                reasons.push(`⚠️ High debt burden: ${(stock.debt_ratio * 100).toFixed(0)}% debt ratio`);
-            }
-
-            // Dividend analysis
-            if (stock.dividend_yield >= 0.03) {
-                reasons.push(`💰 Good income: ${(stock.dividend_yield * 100).toFixed(1)}% dividend yield`);
-            } else if (stock.dividend_yield > 0) {
-                reasons.push(`💸 Small dividend: ${(stock.dividend_yield * 100).toFixed(1)}% yield`);
-            } else {
-                reasons.push(`📊 No dividend - focused on growth instead`);
-            }
-
-            return reasons.join('<br>');
-        }
-
-        // Main analysis function
-        async function analyzeStocks() {
-            console.log("🚀 Starting comprehensive stock analysis...");
+        function analyzeStocks() {
+            console.log("🚀 Starting stock analysis...");
             const resultsDiv = document.getElementById('analysisResults');
             
-            // Show loading
-            resultsDiv.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Analyzing stocks with your preferences...</p>
-                    <small>Attempting to fetch real-time data</small>
-                </div>
-            `;
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing stocks with your preferences...</p></div>';
 
-            // Get user preferences
             const preferences = {
-                budget: parseFloat(document.getElementById('budget').value) || 100000, // Default if empty
+                budget: parseFloat(document.getElementById('budget').value) || 100000,
                 riskTolerance: document.getElementById('riskTolerance').value,
-                timeframe: document.getElementById('timeframe').value,
                 sectors: [],
                 avoidCriteria: document.getElementById('avoidCriteria').value,
                 customAvoid: document.getElementById('customAvoid').value,
-                esgImportance: document.getElementById('esgImportance').value
+                esgImportance: document.getElementById('esgImportance').value,
+                includeNew: document.getElementById('includeNew').checked
             };
 
-            // Get selected sectors
-            ['tech', 'healthcare', 'finance', 'consumer', 'energy', 'telecommunications'].forEach(sector => {
+            ['tech', 'healthcare', 'finance', 'consumer', 'energy', 'telecommunications'].forEach(function(sector) {
                 if (document.getElementById(sector).checked) {
                     preferences.sectors.push(sector === 'tech' ? 'technology' : sector);
                 }
@@ -794,193 +527,155 @@
 
             console.log("📊 User preferences:", preferences);
 
-            try {
-                const stockDatabase = {};
-                const symbols = Object.keys(stockMetadata);
-                let realTimeCount = 0;
-
-                // Try to get real-time data for first few stocks
-                const prioritySymbols = symbols.slice(0, 3); // Just first 3 to avoid rate limits
-                
-                for (let i = 0; i < prioritySymbols.length; i++) {
-                    const symbol = prioritySymbols[i];
-                    
-                    resultsDiv.innerHTML = `
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>Fetching ${symbol}... (${i + 1}/${prioritySymbols.length})</p>
-                            <small>Attempting real-time data from Alpha Vantage</small>
-                        </div>
-                    `;
-                    
-                    const priceData = await fetchStockPrice(symbol);
-                    const metadata = stockMetadata[symbol];
-                    
-                    if (priceData) {
-                        stockDatabase[symbol] = {
-                            ...metadata,
-                            price: priceData.price,
-                            change: priceData.change,
-                            changePercent: priceData.changePercent,
-                            lastUpdated: priceData.lastUpdated,
-                            isRealTime: true
-                        };
-                        realTimeCount++;
-                    } else {
-                        stockDatabase[symbol] = {
-                            ...metadata,
-                            price: estimatedPrices[symbol] || 5000,
-                            isRealTime: false,
-                            warning: "Using estimated price"
-                        };
-                    }
-                    
-                    // Add delay between requests
-                    if (i < prioritySymbols.length - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay
-                    }
+            setTimeout(async function() {
+                let availableSymbols = Object.keys(stockMetadata);
+                if (!preferences.includeNew) {
+                    availableSymbols = availableSymbols.filter(function(symbol) {
+                        return !stockMetadata[symbol].isNew;
+                    });
                 }
 
-                // Add remaining stocks with estimated prices
-                symbols.forEach(symbol => {
-                    if (!stockDatabase[symbol]) {
-                        stockDatabase[symbol] = {
-                            ...stockMetadata[symbol],
-                            price: estimatedPrices[symbol] || 5000,
-                            isRealTime: false,
-                            warning: "Estimated price"
-                        };
-                    }
+                // Select stocks for API calls (limit to avoid rate limits)
+                const stocksForAPI = selectStocksForLiveData(availableSymbols, preferences, 5);
+                
+                // Update loading message
+                resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Fetching real-time stock prices...</p></div>';
+                
+                // Fetch real prices for selected stocks
+                const pricePromises = stocksForAPI.map(async function(symbol) {
+                    const price = await fetchStockPrice(symbol);
+                    return { symbol, price };
+                });
+                
+                const priceResults = await Promise.all(pricePromises);
+                
+                // Build stock database with real and estimated prices
+                const stockDatabase = {};
+                availableSymbols.forEach(function(symbol) {
+                    const priceResult = priceResults.find(p => p.symbol === symbol);
+                    const realPrice = priceResult ? priceResult.price : null;
+                    
+                    stockDatabase[symbol] = Object.assign({}, stockMetadata[symbol], {
+                        price: realPrice || estimatedPrices[symbol] || 5000,
+                        isRealTime: realPrice !== null,
+                        warning: realPrice ? null : "Estimated price - API limit reached"
+                    });
                 });
 
-                console.log(`📈 Analysis complete: ${symbols.length} stocks processed, ${realTimeCount} with real-time data`);
-
-                // Filter stocks based on avoid criteria
                 const availableStocks = [];
-                for (const [symbol, stock] of Object.entries(stockDatabase)) {
+                for (const symbol in stockDatabase) {
+                    const stock = stockDatabase[symbol];
                     if (!shouldAvoidStock(stock, preferences.avoidCriteria, preferences.customAvoid)) {
                         const score = calculateScore(stock, preferences);
-                        availableStocks.push({ symbol, ...stock, score });
+                        availableStocks.push(Object.assign({}, stock, { symbol: symbol, score: score }));
                     }
                 }
 
-                // Sort by score and limit to top 5
-                availableStocks.sort((a, b) => {
-                    if (a.score !== b.score) return b.score - a.score;
-                    if (a.isRealTime && !b.isRealTime) return -1;
-                    if (!a.isRealTime && b.isRealTime) return 1;
-                    return 0;
+                availableStocks.sort(function(a, b) {
+                    return b.score - a.score;
                 });
 
-                // Limit to top 5 stocks
                 const topStocks = availableStocks.slice(0, 5);
+                displayResults(topStocks, preferences);
+            }, 1000);
+        }
 
-                // Generate results HTML
-                let html = '<div class="stock-grid">';
-                
-                topStocks.forEach(stock => {
-                    const affordableShares = (preferences.budget / stock.price).toFixed(3);
-                    const scoreClass = getScoreClass(stock.score);
-                    const recommendation = generateRecommendation(stock, preferences);
-                    
-                    const priceDisplay = stock.isRealTime ? 
-                        `₱${stock.price.toFixed(2)} <small style="color: #10b981;">●LIVE</small>` : 
-                        `₱${stock.price.toFixed(2)} <small style="color: #f59e0b;">●EST</small>`;
-                    
-                    html += `
-                        <div class="stock-card">
-                            <div class="stock-header">
-                                <div class="stock-symbol">${stock.symbol}</div>
-                                <div class="score ${scoreClass}">${stock.score}%</div>
-                            </div>
-                            <h4>${stock.name}</h4>
-                            <div class="stock-info">
-                                <div class="info-row">
-                                    <span>Price:</span>
-                                    <span>${priceDisplay}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>You Can Buy:</span>
-                                    <span>${affordableShares} shares</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Investment Value:</span>
-                                    <span>₱${(parseFloat(affordableShares) * stock.price).toFixed(2)}</span>
-                                </div>
-                                ${stock.change ? `
-                                <div class="info-row">
-                                    <span>Daily Change:</span>
-                                    <span style="color: ${stock.change >= 0 ? '#10b981' : '#ef4444'}">
-                                        ${stock.change >= 0 ? '+' : ''}₱${stock.change.toFixed(2)} (${stock.changePercent})
-                                    </span>
-                                </div>
-                                ` : ''}
-                                <div class="info-row">
-                                    <span>P/E Ratio:</span>
-                                    <span>${stock.pe_ratio}</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Dividend Yield:</span>
-                                    <span>${(stock.dividend_yield * 100).toFixed(1)}%</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>Revenue Growth:</span>
-                                    <span>${(stock.revenue_growth * 100).toFixed(1)}%</span>
-                                </div>
-                                <div class="info-row">
-                                    <span>ESG Score:</span>
-                                    <span>${stock.esg_score}/100</span>
-                                </div>
-                                ${stock.lastUpdated ? `
-                                <div class="info-row" style="font-size: 0.8rem; color: #6b7280;">
-                                    <span>Last Updated:</span>
-                                    <span>${stock.lastUpdated}</span>
-                                </div>
-                                ` : ''}
-                            </div>
-                            <div class="analysis-text">
-                                <strong>Why this score?</strong><br>
-                                ${recommendation}
-                                ${stock.warning ? `<br><br><small style="color: #f59e0b;">⚠️ ${stock.warning}</small>` : ''}
-                            </div>
-                        </div>
-                    `;
+        function shouldAvoidStock(stock, avoidCriteria, customAvoid) {
+            if (customAvoid) {
+                const customList = customAvoid.toLowerCase().split(',').map(function(s) {
+                    return s.trim();
                 });
-                
-                html += '</div>';
-                
-                // Add stock count info
-                const totalRealTime = topStocks.filter(s => s.isRealTime).length;
-                html += `
-                    <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">
-                        <small style="color: #6b7280;">
-                            📊 Showing top 5 recommended stocks | 
-                            🔴 ${totalRealTime} real-time prices | 
-                            🟡 ${topStocks.length - totalRealTime} estimated prices<br>
-                            Real-time data from Alpha Vantage API (when available)
-                        </small>
-                    </div>
-                `;
-                
-                resultsDiv.innerHTML = html;
-                console.log("✅ Stock analysis completed successfully!");
+                const match = customList.some(function(avoid) {
+                    return stock.name.toLowerCase().includes(avoid);
+                });
+                if (match) return true;
+            }
 
-            } catch (error) {
-                console.error('❌ Error during analysis:', error);
-                resultsDiv.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #ef4444;">
-                        <h3>⚠️ Analysis Error</h3>
-                        <p>Something went wrong during the analysis.</p>
-                        <p><strong>Error:</strong> ${error.message}</p>
-                        <button onclick="startAnalysis()" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
-                            Try Again
-                        </button>
-                    </div>
-                `;
+            switch (avoidCriteria) {
+                case 'low_revenue_growth': return stock.revenue_growth < 0.05;
+                case 'high_debt': return stock.debt_ratio > 0.50;
+                case 'no_dividend': return stock.dividend_yield === 0;
+                case 'high_volatility': return stock.volatility > 0.40;
+                default: return false;
             }
         }
 
-        // ESG Info Modal functions
+        function calculateScore(stock, preferences) {
+            let score = 0;
+            let maxScore = 100;
+
+            if (preferences.riskTolerance === 'conservative' && stock.volatility < 0.25) score += 25;
+            else if (preferences.riskTolerance === 'moderate' && stock.volatility >= 0.25 && stock.volatility < 0.35) score += 25;
+            else if (preferences.riskTolerance === 'aggressive' && stock.volatility >= 0.35) score += 25;
+            else if (preferences.riskTolerance === 'moderate' && stock.volatility < 0.25) score += 20;
+
+            if (preferences.sectors.includes(stock.sector.toLowerCase())) score += 20;
+
+            if (preferences.esgImportance === 'high' && stock.esg_score >= 80) score += 15;
+            else if (preferences.esgImportance === 'medium' && stock.esg_score >= 70) score += 15;
+            else if (preferences.esgImportance === 'low') score += 15;
+            else if (stock.esg_score >= 75) score += 10;
+
+            if (stock.revenue_growth >= 0.15) score += 20;
+            else if (stock.revenue_growth >= 0.08) score += 15;
+            else if (stock.revenue_growth >= 0.05) score += 10;
+
+            if (stock.debt_ratio < 0.3) score += 20;
+            else if (stock.debt_ratio < 0.5) score += 15;
+            else score += 5;
+
+            return Math.round(score);
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return 'high';
+            if (score >= 60) return 'medium';
+            return 'low';
+        }
+
+        function displayResults(topStocks, preferences) {
+            const resultsDiv = document.getElementById('analysisResults');
+            let html = '<div class="stock-grid">';
+            
+            topStocks.forEach(function(stock) {
+                const affordableShares = (preferences.budget / stock.price).toFixed(3);
+                const scoreClass = getScoreClass(stock.score);
+                const newBadge = stock.isNew ? '<span style="background: #10b981; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">NEW</span>' : '';
+                const priceIndicator = stock.isRealTime ? '<small style="color: #10b981;">●LIVE</small>' : '<small style="color: #f59e0b;">●EST</small>';
+                
+                html += '<div class="stock-card">';
+                html += '<div class="stock-header">';
+                html += '<div class="stock-symbol">' + stock.symbol + newBadge + '</div>';
+                html += '<div class="score ' + scoreClass + '">' + stock.score + '%</div>';
+                html += '</div>';
+                html += '<h4>' + stock.name + '</h4>';
+                html += '<div class="stock-info">';
+                html += '<div class="info-row"><span>Price:</span><span>₱' + stock.price.toFixed(2) + ' ' + priceIndicator + '</span></div>';
+                html += '<div class="info-row"><span>You Can Buy:</span><span>' + affordableShares + ' shares</span></div>';
+                html += '<div class="info-row"><span>Investment Value:</span><span>₱' + (parseFloat(affordableShares) * stock.price).toFixed(2) + '</span></div>';
+                html += '<div class="info-row"><span>P/E Ratio:</span><span>' + stock.pe_ratio + '</span></div>';
+                html += '<div class="info-row"><span>Dividend Yield:</span><span>' + (stock.dividend_yield * 100).toFixed(1) + '%</span></div>';
+                html += '<div class="info-row"><span>Revenue Growth:</span><span>' + (stock.revenue_growth * 100).toFixed(1) + '%</span></div>';
+                html += '<div class="info-row"><span>ESG Score:</span><span>' + stock.esg_score + '/100</span></div>';
+                html += '</div>';
+                html += '<div class="analysis-text">';
+                html += '<strong>Company Description:</strong><br>' + stock.description;
+                if (stock.warning) {
+                    html += '<br><br><small style="color: #f59e0b;">⚠️ ' + stock.warning + '</small>';
+                }
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            html += '<div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.9); border-radius: 10px;">';
+            html += '<small style="color: #6b7280;">📊 Showing top 5 recommended stocks | Prices marked LIVE are real-time</small>';
+            html += '</div>';
+            
+            resultsDiv.innerHTML = html;
+            console.log("✅ Stock analysis completed successfully!");
+        }
+
         function showESGInfo() {
             document.getElementById('esgModal').style.display = 'block';
         }
@@ -989,7 +684,6 @@
             document.getElementById('esgModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('esgModal');
             if (event.target === modal) {
@@ -997,19 +691,11 @@
             }
         }
 
-        // Initialize when page loads
         window.addEventListener('load', function() {
             console.log("📱 Page loaded successfully!");
             console.log("🔧 All functions initialized!");
-            
-            // Show initial message
-            setTimeout(() => {
-                console.log("💡 Ready to analyze stocks! Click the Analyze button to start.");
-            }, 1000);
+            console.log("💡 Ready to analyze stocks! Click the Analyze button to start.");
         });
-
-        // Test the button connection
-        console.log("🔗 Button onclick should call startAnalysis function");
     </script>
 </body>
 </html>
