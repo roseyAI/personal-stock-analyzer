@@ -1,7 +1,31 @@
 exports.handler = async (event, context) => {
   const { symbol } = event.queryStringParameters;
-  const API_KEY = process.env.ALPHA_VANTAGE_API_KEY || '6Z5XAIQXW8DB8AO6';
   
+  // Use the environment variable you already set up
+  const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+  
+  if (!API_KEY) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'API key not configured' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+  }
+
+  if (!symbol) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Symbol parameter is required' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+  }
+
   try {
     const response = await fetch(
       `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=5min&apikey=${API_KEY}`
@@ -19,7 +43,11 @@ exports.handler = async (event, context) => {
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: error.message }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     };
   }
 };
