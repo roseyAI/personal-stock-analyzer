@@ -1,4 +1,4 @@
-# 📈 Personal Stock Analysis Dashboard
+# 📈 Personal Stock Analysis Dashboard: https://personal-stock-analyzer.netlify.app/
 
 A personalized stock analysis tool built for Philippine investors wanting to invest in US stocks.
 
