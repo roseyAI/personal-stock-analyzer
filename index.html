@@ -511,7 +511,7 @@
             }
         }
 
-        // Fallback: return sector-specific stocks if EODHD fails
+        // Fallback: return sector-specific stocks with proper descriptions
         async function fetchPopularStocks() {
             console.log('Using sector-specific fallback stocks...');
             
@@ -525,61 +525,61 @@
 
             let fallbackStocks = [];
 
-            // Return stocks matching user's selected sectors
+            // Return stocks matching user's selected sectors with proper descriptions
             userSectors.forEach(function(sector) {
                 switch(sector) {
                     case 'healthcare':
                         fallbackStocks.push(
-                            { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
-                            { symbol: 'PFE', name: 'Pfizer Inc.', sector: 'Healthcare' },
-                            { symbol: 'UNH', name: 'UnitedHealth Group Inc.', sector: 'Healthcare' },
-                            { symbol: 'ABBV', name: 'AbbVie Inc.', sector: 'Healthcare' },
-                            { symbol: 'MRK', name: 'Merck & Co Inc.', sector: 'Healthcare' }
+                            { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', description: 'Diversified healthcare company with strong pharmaceutical pipeline and consumer products.' },
+                            { symbol: 'PFE', name: 'Pfizer Inc.', sector: 'Healthcare', description: 'Leading pharmaceutical company known for vaccines and innovative medicines.' },
+                            { symbol: 'UNH', name: 'UnitedHealth Group Inc.', sector: 'Healthcare', description: 'Largest health insurance company in the US with growing healthcare services.' },
+                            { symbol: 'ABBV', name: 'AbbVie Inc.', sector: 'Healthcare', description: 'Biopharmaceutical company focused on immunology and oncology treatments.' },
+                            { symbol: 'MRK', name: 'Merck & Co Inc.', sector: 'Healthcare', description: 'Global pharmaceutical company with strong oncology and vaccine portfolio.' }
                         );
                         break;
                     case 'tech':
                         fallbackStocks.push(
-                            { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology' },
-                            { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technology' },
-                            { symbol: 'MSFT', name: 'Microsoft Corporation', sector: 'Technology' },
-                            { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Technology' }
+                            { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology', description: 'Leading technology company with strong ecosystem of devices and services.' },
+                            { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technology', description: 'Dominant search engine company with strong AI capabilities and cloud growth.' },
+                            { symbol: 'MSFT', name: 'Microsoft Corporation', sector: 'Technology', description: 'Cloud computing leader with strong enterprise software and productivity tools.' },
+                            { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Technology', description: 'AI chip leader driving the artificial intelligence and data center revolution.' }
                         );
                         break;
                     case 'finance':
                         fallbackStocks.push(
-                            { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services' },
-                            { symbol: 'BAC', name: 'Bank of America Corp', sector: 'Financial Services' },
-                            { symbol: 'WFC', name: 'Wells Fargo & Co', sector: 'Financial Services' },
-                            { symbol: 'GS', name: 'Goldman Sachs Group Inc', sector: 'Financial Services' }
+                            { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services', description: 'Largest US bank with strong investment banking and consumer services.' },
+                            { symbol: 'BAC', name: 'Bank of America Corp', sector: 'Financial Services', description: 'Major consumer bank with large deposit base and wealth management services.' },
+                            { symbol: 'WFC', name: 'Wells Fargo & Co', sector: 'Financial Services', description: 'Leading mortgage lender and consumer bank with extensive branch network.' },
+                            { symbol: 'GS', name: 'Goldman Sachs Group Inc', sector: 'Financial Services', description: 'Premier investment bank with strong trading and wealth management divisions.' }
                         );
                         break;
                     case 'energy':
                         fallbackStocks.push(
-                            { symbol: 'XOM', name: 'Exxon Mobil Corporation', sector: 'Energy' },
-                            { symbol: 'CVX', name: 'Chevron Corporation', sector: 'Energy' }
+                            { symbol: 'XOM', name: 'Exxon Mobil Corporation', sector: 'Energy', description: 'Integrated oil giant with global refining operations and strong dividend history.' },
+                            { symbol: 'CVX', name: 'Chevron Corporation', sector: 'Energy', description: 'Major oil producer with disciplined capital allocation and consistent shareholder returns.' }
                         );
                         break;
                     case 'consumer':
                         fallbackStocks.push(
-                            { symbol: 'KO', name: 'The Coca-Cola Company', sector: 'Consumer Defensive' },
-                            { symbol: 'PG', name: 'Procter & Gamble Co', sector: 'Consumer Defensive' }
+                            { symbol: 'KO', name: 'The Coca-Cola Company', sector: 'Consumer Defensive', description: 'Global beverage leader with iconic brands and extensive distribution network.' },
+                            { symbol: 'PG', name: 'Procter & Gamble Co', sector: 'Consumer Defensive', description: 'Consumer goods giant with trusted household brands and strong pricing power.' }
                         );
                         break;
                     case 'telecommunications':
                         fallbackStocks.push(
-                            { symbol: 'VZ', name: 'Verizon Communications Inc.', sector: 'Communication Services' },
-                            { symbol: 'T', name: 'AT&T Inc.', sector: 'Communication Services' }
+                            { symbol: 'VZ', name: 'Verizon Communications Inc.', sector: 'Communication Services', description: 'Leading wireless carrier with extensive 5G network and stable dividend.' },
+                            { symbol: 'T', name: 'AT&T Inc.', sector: 'Communication Services', description: 'Major telecommunications provider with wireless and broadband services.' }
                         );
                         break;
                 }
             });
 
-            // If no sectors selected or no matches, return a default mix
+            // If no sectors selected, return a default mix
             if (fallbackStocks.length === 0) {
                 fallbackStocks = [
-                    { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology' },
-                    { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
-                    { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services' }
+                    { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology', description: 'Leading technology company with strong ecosystem of devices and services.' },
+                    { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', description: 'Diversified healthcare company with strong pharmaceutical pipeline.' },
+                    { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services', description: 'Largest US bank with strong investment banking and consumer services.' }
                 ];
             }
 
@@ -587,8 +587,7 @@
                 return Object.assign({}, stock, {
                     pe_ratio: Math.floor(Math.random() * 30) + 15,
                     dividend_yield: Math.random() * 0.05,
-                    market_cap: 'N/A',
-                    description: 'Popular company in ' + stock.sector + ' sector'
+                    market_cap: 'N/A'
                 });
             });
         }
