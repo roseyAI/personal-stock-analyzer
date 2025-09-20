@@ -349,7 +349,7 @@
 
                 <div class="preference-group">
                     <label>Enter companies to avoid (Optional)</label>
-                    <input type="text" id="customAvoid">
+                    <input type="text" id="customAvoid" placeholder="Use exact symbols: TSLA,GOOGL,NVDA (not company names)">
                 </div>
 
                 <div class="preference-group">
@@ -532,13 +532,25 @@
             userSectors.forEach(function(sector) {
                 switch(sector) {
                     case 'healthcare':
-                        fallbackStocks.push(
-                            { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', description: 'Diversified healthcare company with strong pharmaceutical pipeline and consumer products.' },
-                            { symbol: 'PFE', name: 'Pfizer Inc.', sector: 'Healthcare', description: 'Leading pharmaceutical company known for vaccines and innovative medicines.' },
-                            { symbol: 'UNH', name: 'UnitedHealth Group Inc.', sector: 'Healthcare', description: 'Largest health insurance company in the US with growing healthcare services.' },
-                            { symbol: 'ABBV', name: 'AbbVie Inc.', sector: 'Healthcare', description: 'Biopharmaceutical company focused on immunology and oncology treatments.' },
-                            { symbol: 'MRK', name: 'Merck & Co Inc.', sector: 'Healthcare', description: 'Global pharmaceutical company with strong oncology and vaccine portfolio.' }
-                        );
+                        if (includeNew) {
+                            // New/emerging healthcare and biotech stocks
+                            fallbackStocks.push(
+                                { symbol: 'MRNA', name: 'Moderna Inc.', sector: 'Healthcare', description: 'mRNA technology platform company developing vaccines and therapeutics.' },
+                                { symbol: 'NVTA', name: 'Invitae Corporation', sector: 'Healthcare', description: 'Genetic testing and personalized medicine company.' },
+                                { symbol: 'TDOC', name: 'Teladoc Health Inc.', sector: 'Healthcare', description: 'Leading telemedicine and virtual healthcare platform.' },
+                                { symbol: 'VEEV', name: 'Veeva Systems Inc.', sector: 'Healthcare', description: 'Cloud-based software for life sciences industry.' },
+                                { symbol: 'ILMN', name: 'Illumina Inc.', sector: 'Healthcare', description: 'DNA sequencing and array-based technologies for genetic analysis.' },
+                                { symbol: 'REGN', name: 'Regeneron Pharmaceuticals Inc.', sector: 'Healthcare', description: 'Biotechnology company developing medicines for serious diseases.' }
+                            );
+                        } else {
+                            // Established healthcare stocks
+                            fallbackStocks.push(
+                                { symbol: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', description: 'Diversified healthcare company with strong pharmaceutical pipeline and consumer products.' },
+                                { symbol: 'PFE', name: 'Pfizer Inc.', sector: 'Healthcare', description: 'Leading pharmaceutical company known for vaccines and innovative medicines.' },
+                                { symbol: 'UNH', name: 'UnitedHealth Group Inc.', sector: 'Healthcare', description: 'Largest health insurance company in the US with growing healthcare services.' },
+                                { symbol: 'ABBV', name: 'AbbVie Inc.', sector: 'Healthcare', description: 'Biopharmaceutical company focused on immunology and oncology treatments.' }
+                            );
+                        }
                         break;
                     case 'tech':
                     case 'technology':
@@ -565,30 +577,82 @@
                         }
                         break;
                     case 'finance':
-                        fallbackStocks.push(
-                            { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services', description: 'Largest US bank with strong investment banking and consumer services.' },
-                            { symbol: 'BAC', name: 'Bank of America Corp', sector: 'Financial Services', description: 'Major consumer bank with large deposit base and wealth management services.' },
-                            { symbol: 'WFC', name: 'Wells Fargo & Co', sector: 'Financial Services', description: 'Leading mortgage lender and consumer bank with extensive branch network.' },
-                            { symbol: 'GS', name: 'Goldman Sachs Group Inc', sector: 'Financial Services', description: 'Premier investment bank with strong trading and wealth management divisions.' }
-                        );
+                        if (includeNew) {
+                            // New/emerging fintech and financial services stocks
+                            fallbackStocks.push(
+                                { symbol: 'SQ', name: 'Block Inc.', sector: 'Financial Services', description: 'Digital payments company with Square and Cash App platforms.' },
+                                { symbol: 'PYPL', name: 'PayPal Holdings Inc.', sector: 'Financial Services', description: 'Leading digital payments platform for online and mobile transactions.' },
+                                { symbol: 'SOFI', name: 'SoFi Technologies Inc.', sector: 'Financial Services', description: 'Digital financial services company offering lending, banking, and investing.' },
+                                { symbol: 'UPST', name: 'Upstart Holdings Inc.', sector: 'Financial Services', description: 'AI-powered lending platform using machine learning for credit decisions.' },
+                                { symbol: 'AFRM', name: 'Affirm Holdings Inc.', sector: 'Financial Services', description: 'Buy-now-pay-later platform for consumer financing.' },
+                                { symbol: 'COIN', name: 'Coinbase Global Inc.', sector: 'Financial Services', description: 'Leading cryptocurrency exchange and digital asset platform.' }
+                            );
+                        } else {
+                            // Established financial stocks
+                            fallbackStocks.push(
+                                { symbol: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services', description: 'Largest US bank with strong investment banking and consumer services.' },
+                                { symbol: 'BAC', name: 'Bank of America Corp', sector: 'Financial Services', description: 'Major consumer bank with large deposit base and wealth management services.' },
+                                { symbol: 'WFC', name: 'Wells Fargo & Co', sector: 'Financial Services', description: 'Leading mortgage lender and consumer bank with extensive branch network.' },
+                                { symbol: 'GS', name: 'Goldman Sachs Group Inc', sector: 'Financial Services', description: 'Premier investment bank with strong trading and wealth management divisions.' }
+                            );
+                        }
                         break;
                     case 'energy':
-                        fallbackStocks.push(
-                            { symbol: 'XOM', name: 'Exxon Mobil Corporation', sector: 'Energy', description: 'Integrated oil giant with global refining operations and strong dividend history.' },
-                            { symbol: 'CVX', name: 'Chevron Corporation', sector: 'Energy', description: 'Major oil producer with disciplined capital allocation and consistent shareholder returns.' }
-                        );
+                        if (includeNew) {
+                            // New/emerging clean energy and renewable stocks
+                            fallbackStocks.push(
+                                { symbol: 'ENPH', name: 'Enphase Energy Inc.', sector: 'Energy', description: 'Solar microinverter technology and energy management systems.' },
+                                { symbol: 'SEDG', name: 'SolarEdge Technologies Inc.', sector: 'Energy', description: 'Smart energy technology for solar photovoltaic systems.' },
+                                { symbol: 'NEE', name: 'NextEra Energy Inc.', sector: 'Energy', description: 'Leading clean energy company with extensive renewable portfolio.' },
+                                { symbol: 'PLUG', name: 'Plug Power Inc.', sector: 'Energy', description: 'Hydrogen fuel cell systems for electrification of commercial vehicles.' },
+                                { symbol: 'FSLR', name: 'First Solar Inc.', sector: 'Energy', description: 'Leading manufacturer of photovoltaic solar modules.' },
+                                { symbol: 'BE', name: 'Bloom Energy Corporation', sector: 'Energy', description: 'Solid oxide fuel cell technology for clean electricity generation.' }
+                            );
+                        } else {
+                            // Traditional energy stocks
+                            fallbackStocks.push(
+                                { symbol: 'XOM', name: 'Exxon Mobil Corporation', sector: 'Energy', description: 'Integrated oil giant with global refining operations and strong dividend history.' },
+                                { symbol: 'CVX', name: 'Chevron Corporation', sector: 'Energy', description: 'Major oil producer with disciplined capital allocation and consistent shareholder returns.' }
+                            );
+                        }
                         break;
                     case 'consumer':
-                        fallbackStocks.push(
-                            { symbol: 'KO', name: 'The Coca-Cola Company', sector: 'Consumer Defensive', description: 'Global beverage leader with iconic brands and extensive distribution network.' },
-                            { symbol: 'PG', name: 'Procter & Gamble Co', sector: 'Consumer Defensive', description: 'Consumer goods giant with trusted household brands and strong pricing power.' }
-                        );
+                        if (includeNew) {
+                            // New/emerging consumer and e-commerce stocks
+                            fallbackStocks.push(
+                                { symbol: 'ROKU', name: 'Roku Inc.', sector: 'Consumer Defensive', description: 'Streaming platform and TV operating system for cord-cutting consumers.' },
+                                { symbol: 'SPOT', name: 'Spotify Technology S.A.', sector: 'Consumer Defensive', description: 'Leading music streaming platform with global reach.' },
+                                { symbol: 'NFLX', name: 'Netflix Inc.', sector: 'Consumer Defensive', description: 'Dominant streaming entertainment service with original content.' },
+                                { symbol: 'BYND', name: 'Beyond Meat Inc.', sector: 'Consumer Defensive', description: 'Plant-based meat substitute products for health-conscious consumers.' },
+                                { symbol: 'ETSY', name: 'Etsy Inc.', sector: 'Consumer Defensive', description: 'E-commerce marketplace for handmade and vintage items.' },
+                                { symbol: 'CHWY', name: 'Chewy Inc.', sector: 'Consumer Defensive', description: 'Online pet products retailer with subscription model.' }
+                            );
+                        } else {
+                            // Traditional consumer goods stocks
+                            fallbackStocks.push(
+                                { symbol: 'KO', name: 'The Coca-Cola Company', sector: 'Consumer Defensive', description: 'Global beverage leader with iconic brands and extensive distribution network.' },
+                                { symbol: 'PG', name: 'Procter & Gamble Co', sector: 'Consumer Defensive', description: 'Consumer goods giant with trusted household brands and strong pricing power.' }
+                            );
+                        }
                         break;
                     case 'telecommunications':
-                        fallbackStocks.push(
-                            { symbol: 'VZ', name: 'Verizon Communications Inc.', sector: 'Communication Services', description: 'Leading wireless carrier with extensive 5G network and stable dividend.' },
-                            { symbol: 'T', name: 'AT&T Inc.', sector: 'Communication Services', description: 'Major telecommunications provider with wireless and broadband services.' }
-                        );
+                        if (includeNew) {
+                            // New/emerging telecom and communication stocks
+                            fallbackStocks.push(
+                                { symbol: 'ZOOM', name: 'Zoom Video Communications Inc.', sector: 'Communication Services', description: 'Video-first communications platform for remote work and collaboration.' },
+                                { symbol: 'TWTR', name: 'Twitter Inc.', sector: 'Communication Services', description: 'Social networking platform for real-time information and communication.' },
+                                { symbol: 'SNAP', name: 'Snap Inc.', sector: 'Communication Services', description: 'Multimedia messaging and social media platform popular with younger demographics.' },
+                                { symbol: 'PINS', name: 'Pinterest Inc.', sector: 'Communication Services', description: 'Visual discovery platform for lifestyle and shopping inspiration.' },
+                                { symbol: 'UBER', name: 'Uber Technologies Inc.', sector: 'Communication Services', description: 'Technology platform for mobility and delivery services.' },
+                                { symbol: 'LYFT', name: 'Lyft Inc.', sector: 'Communication Services', description: 'Ridesharing platform focused on sustainable transportation solutions.' }
+                            );
+                        } else {
+                            // Traditional telecom stocks
+                            fallbackStocks.push(
+                                { symbol: 'VZ', name: 'Verizon Communications Inc.', sector: 'Communication Services', description: 'Leading wireless carrier with extensive 5G network and stable dividend.' },
+                                { symbol: 'T', name: 'AT&T Inc.', sector: 'Communication Services', description: 'Major telecommunications provider with wireless and broadband services.' }
+                            );
+                        }
                         break;
                 }
             });
