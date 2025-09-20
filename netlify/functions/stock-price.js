@@ -28,7 +28,7 @@ exports.handler = async (event, context) => {
 
   try {
     const response = await fetch(
-      `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=5min&apikey=${API_KEY}`
+      `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`
     );
     const data = await response.json();
     
