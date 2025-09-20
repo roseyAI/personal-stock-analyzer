@@ -511,10 +511,10 @@
             }
         }
 
-        // Fallback: return sector-specific stocks with proper descriptions
+        // Enhanced fallback with new/promising tech stocks
         async function fetchPopularStocks() {
             console.log('Using sector-specific fallback stocks...');
-            
+
             // Get user's selected sectors from current preferences
             const userSectors = [];
             ['tech', 'healthcare', 'finance', 'consumer', 'energy', 'telecommunications'].forEach(function(sector) {
@@ -524,6 +524,9 @@
             });
 
             let fallbackStocks = [];
+
+            // Check if user wants new/promising stocks
+            const includeNew = document.getElementById('includeNew').checked;
 
             // Return stocks matching user's selected sectors with proper descriptions
             userSectors.forEach(function(sector) {
@@ -538,12 +541,28 @@
                         );
                         break;
                     case 'tech':
-                        fallbackStocks.push(
-                            { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology', description: 'Leading technology company with strong ecosystem of devices and services.' },
-                            { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technology', description: 'Dominant search engine company with strong AI capabilities and cloud growth.' },
-                            { symbol: 'MSFT', name: 'Microsoft Corporation', sector: 'Technology', description: 'Cloud computing leader with strong enterprise software and productivity tools.' },
-                            { symbol: 'NVDA', name: 'NVIDIA Corporation', sector: 'Technology', description: 'AI chip leader driving the artificial intelligence and data center revolution.' }
-                        );
+                    case 'technology':
+                        if (includeNew) {
+                            // New/emerging tech stocks for growth investors
+                            fallbackStocks.push(
+                                { symbol: 'PLTR', name: 'Palantir Technologies Inc.', sector: 'Technology', description: 'Data analytics and AI platform company serving government and enterprise clients.' },
+                                { symbol: 'SNOW', name: 'Snowflake Inc.', sector: 'Technology', description: 'Cloud-based data platform enabling data warehousing and analytics.' },
+                                { symbol: 'CRWD', name: 'CrowdStrike Holdings Inc.', sector: 'Technology', description: 'Cybersecurity company providing cloud-delivered endpoint protection.' },
+                                { symbol: 'ZS', name: 'Zscaler Inc.', sector: 'Technology', description: 'Cloud security platform providing secure internet and private application access.' },
+                                { symbol: 'DDOG', name: 'Datadog Inc.', sector: 'Technology', description: 'Monitoring and analytics platform for cloud applications and infrastructure.' },
+                                { symbol: 'NET', name: 'Cloudflare Inc.', sector: 'Technology', description: 'Web infrastructure and security company providing CDN and cybersecurity services.' },
+                                { symbol: 'OKTA', name: 'Okta Inc.', sector: 'Technology', description: 'Identity and access management platform for secure digital transformation.' },
+                                { symbol: 'TWLO', name: 'Twilio Inc.', sector: 'Technology', description: 'Cloud communications platform enabling developers to build messaging applications.' }
+                            );
+                        } else {
+                            // Established tech stocks (avoiding the ones user specified)
+                            fallbackStocks.push(
+                                { symbol: 'CRM', name: 'Salesforce Inc.', sector: 'Technology', description: 'Leading customer relationship management (CRM) platform.' },
+                                { symbol: 'ORCL', name: 'Oracle Corporation', sector: 'Technology', description: 'Enterprise software company specializing in database management systems.' },
+                                { symbol: 'ADBE', name: 'Adobe Inc.', sector: 'Technology', description: 'Digital media and marketing software company.' },
+                                { symbol: 'NOW', name: 'ServiceNow Inc.', sector: 'Technology', description: 'Cloud computing platform for digital workflow automation.' }
+                            );
+                        }
                         break;
                     case 'finance':
                         fallbackStocks.push(
@@ -813,25 +832,68 @@
 
                     // Convert to array for processing
                     const availableStocks = [];
+                    let filteredOutCount = 0;
+
                     for (const symbol in stockDatabase) {
                         const stock = stockDatabase[symbol];
                         if (!shouldAvoidStock(stock, preferences.avoidCriteria, preferences.customAvoid)) {
                             const score = calculateScore(stock, preferences);
                             availableStocks.push(Object.assign({}, stock, { symbol: symbol, score: score }));
+                        } else {
+                            filteredOutCount++;
+                            console.log('❌ Filtered out:', symbol, stock.name, 'due to avoidance criteria');
                         }
                     }
+
+                    console.log('📊 Stock processing results:');
+                    console.log('   • Total stocks processed:', Object.keys(stockDatabase).length);
+                    console.log('   • Stocks filtered out:', filteredOutCount);
+                    console.log('   • Available stocks after filtering:', availableStocks.length);
 
                     // Sort by score (they should all be from selected sectors now)
                     availableStocks.sort(function(a, b) {
                         return b.score - a.score;
                     });
 
-                    const topStocks = availableStocks.slice(0, 5);
-                    
-                    console.log("📊 Final top 5 stocks from selected sectors:", topStocks.map(function(s) {
+                    let topStocks = availableStocks.slice(0, 5);
+
+                    // If no stocks pass filters, provide explanation and suggestions
+                    if (topStocks.length === 0) {
+                        console.warn('⚠️ No stocks passed filtering criteria. Providing suggestions...');
+                        resultsDiv.innerHTML = `
+                            <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.9); border-radius: 15px;">
+                                <h3 style="color: #ef4444; margin-bottom: 20px;">🔍 No Stocks Found</h3>
+                                <p style="margin-bottom: 15px; line-height: 1.6;">
+                                    Your filtering criteria removed all available stocks. Here are some suggestions:
+                                </p>
+                                <div style="text-align: left; max-width: 500px; margin: 0 auto;">
+                                    <h4 style="color: #667eea; margin-bottom: 10px;">Possible Issues:</h4>
+                                    <ul style="margin-bottom: 20px; line-height: 1.8;">
+                                        <li><strong>Custom Avoid List:</strong> "${preferences.customAvoid}" might be too restrictive</li>
+                                        <li><strong>API Limits:</strong> Alpha Vantage free tier (5 calls/min) may be exhausted</li>
+                                        <li><strong>EODHD Screening:</strong> May not have enough "new/promising" stocks in Technology</li>
+                                        <li><strong>Filtering Criteria:</strong> "${preferences.avoidCriteria}" combined with other filters</li>
+                                    </ul>
+                                    <h4 style="color: #667eea; margin-bottom: 10px;">Try This:</h4>
+                                    <ul style="line-height: 1.8;">
+                                        <li>Reduce your custom avoid list to exact symbols only</li>
+                                        <li>Set avoid criteria to "No specific criteria"</li>
+                                        <li>Wait 1 minute and try again (API limits)</li>
+                                        <li>Try without "Include New/Promising Stocks"</li>
+                                    </ul>
+                                </div>
+                                <button onclick="startAnalysis()" style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; font-weight: 600;">
+                                    🔄 Try Again
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    console.log("📊 Final top " + topStocks.length + " stocks from selected sectors:", topStocks.map(function(s) {
                         return s.symbol + " (" + s.sector + ")";
                     }));
-                    
+
                     displayResults(topStocks, preferences, realTimeCount);
 
                 } catch (error) {
@@ -847,7 +909,10 @@
                     return s.trim();
                 });
                 const match = customList.some(function(avoid) {
-                    return stock.name.toLowerCase().includes(avoid) || stock.symbol.toLowerCase().includes(avoid);
+                    return stock.symbol.toLowerCase() === avoid ||
+                           stock.name.toLowerCase().includes(' ' + avoid + ' ') ||
+                           stock.name.toLowerCase().startsWith(avoid + ' ') ||
+                           stock.name.toLowerCase().endsWith(' ' + avoid);
                 });
                 if (match) return true;
             }
